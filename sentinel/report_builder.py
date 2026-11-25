@@ -31,7 +31,22 @@ def build_markdown_report(full_bundle: dict[str, Any]) -> str:
         f"",
         f"---",
         f"",
-        f"## 一、五维风向仪表盘总览",
+        f"## 一、核心实时数据 → 触发后果 → 当下操作结论",
+        f"",
+    ]
+    for item in ana.get("live_consequences", []):
+        lines.extend([
+            f"### {item['domain']}（`{item['freq_badge']}`）",
+            f"- **实时数据**：`{item['live_data']}`",
+            f"- **产生后果**：{item['consequence']}",
+            f"- **当下结论**：**{item['conclusion']}**",
+            f"",
+        ])
+
+    lines.extend([
+        f"---",
+        f"",
+        f"## 二、五维实时评分与状态总览",
         f"",
         f"| 维度 | 量化分 (0-100) | 当前状态判定 | 核心锚定指标 |",
         f"| :--- | :---: | :--- | :--- |",
@@ -43,7 +58,7 @@ def build_markdown_report(full_bundle: dict[str, Any]) -> str:
         f"",
         f"---",
         f"",
-        f"## 二、分层深度拆解（基于最新真实数据）",
+        f"## 三、慢变量账本与分层补充细节",
         f"",
         f"### 1. 美元水管与结算日历",
     ]
