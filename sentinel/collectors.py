@@ -380,9 +380,12 @@ def collect_options_microstructure(qqq_spot: float, ndx_spot: float, risk_free_r
         major_call_wall_qqq = float(otm_calls.index[0]) if not otm_calls.empty else qqq_spot * 1.05
         major_call_wall_oi = int(otm_calls.iloc[0]) if not otm_calls.empty else 0
 
-        # Compare NDX 25,000 (~QQQ 608-609) vs Major Put Wall (e.g. QQQ 600 -> NDX ~24,650)
-        k_25000_qqq = round(25000.0 / ratio)
-        oi_near_25000 = int(puts_by_k.get(float(k_25000_qqq), 0) + puts_by_k.get(float(k_25000_qqq + 1), 0))
+        # Dynamically pick the psychological round-1000 NDX level between spot and major put wall
+        psych_round_ndx = int(np.floor((ndx_spot * 0.99) / 1000.0) * 1000)
+        if abs(psych_round_ndx - round(major_put_wall_qqq * ratio)) < 250 and psych_round_ndx - 1000 > major_put_wall_qqq * ratio:
+            psych_round_ndx -= 1000
+        k_psych_qqq = round(psych_round_ndx / ratio)
+        oi_near_psych = int(puts_by_k.get(float(k_psych_qqq), 0) + puts_by_k.get(float(k_psych_qqq + 1), 0))
 
         # Build clean strike profile in $5 QQQ increments (~205 NDX pts) for chart
         strike_min = int(np.floor(qqq_spot * 0.89 / 5.0) * 5)
@@ -432,9 +435,10 @@ def collect_options_microstructure(qqq_spot: float, ndx_spot: float, risk_free_r
                 "dist_pct": round((major_call_wall_qqq / qqq_spot - 1.0) * 100.0, 2),
             },
             "psych_25000_check": {
-                "qqq_equiv_strike": k_25000_qqq,
-                "put_oi_near_25000": oi_near_25000,
-                "wall_to_25000_oi_ratio": round(major_put_wall_oi / max(oi_near_25000, 1), 1),
+                "psych_round_ndx": psych_round_ndx,
+                "qqq_equiv_strike": k_psych_qqq,
+                "put_oi_near_25000": oi_near_psych,
+                "wall_to_25000_oi_ratio": round(major_put_wall_oi / max(oi_near_psych, 1), 1),
             },
             "put_call_oi_ratio": round(total_put_oi / max(total_call_oi, 1), 2),
             "strike_profile": profile,

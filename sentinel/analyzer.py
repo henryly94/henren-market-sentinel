@@ -437,6 +437,85 @@ def analyze_market_snapshot(snapshot: dict[str, Any]) -> dict[str, Any]:
         },
     ]
 
+    psych_round = psych_check.get("psych_round_ndx", 25000)
+
+    # Pure Live Data -> Immediate Consequence -> Actionable Conclusion Chain (for Top Zone)
+    live_consequences = [
+        {
+            "domain": "美股大盘与期权微结构",
+            "freq_badge": "盘中实时",
+            "level": "danger" if in_neg_gamma else "ok",
+            "live_data": (
+                f"纳指100 报 {ndx_spot:,.0f}（1日 {ndx_q.get('ret_1d_pct', 0):+.2f}%，5日 {ndx_q.get('ret_5d_pct', 0):+.2f}%）"
+                f" | 翻转线 ~{zero_gamma_ndx:,} | 最厚 Put 防线 ~{pw_ndx:,} (QQQ ${pw_qqq:.0f})"
+            ),
+            "consequence": (
+                f"现价低于正负 Gamma 翻转线 {int(zero_gamma_ndx - ndx_spot):,} 点，做市商处于「负 Gamma 追涨杀跌」区间，"
+                f"导致消息刺激脉冲极易回吐、下跌波动被机械放大；整数关口 {psych_round:,} 筹码单薄难成有效支撑。"
+                if in_neg_gamma else
+                f"现价站稳翻转线 ~{zero_gamma_ndx:,} 上方，做市商处于「正 Gamma 高抛低吸」护盘模式，日内回撤受抑。"
+            ),
+            "conclusion": (
+                f"定性「反抽非反转」：不追涨，趁急拉降杠杆/买保护；下方真正支撑看 ~{pw_ndx:,}（QQQ ${pw_qqq:.0f}），重新站稳 ~{zero_gamma_ndx:,} 前保持防守。"
+                if in_neg_gamma else
+                f"顺势偏多持有核心仓位，上方目标阻力墙 ~{cw_ndx:,}（QQQ ${cw_qqq:.0f}），跌破 ~{zero_gamma_ndx:,} 再转防守。"
+            ),
+        },
+        {
+            "domain": "黄金实时买点判别",
+            "freq_badge": "盘中实时",
+            "level": "opportunity" if is_gold_discount else "ok",
+            "live_data": (
+                f"COMEX 黄金 ${gold_px:,.1f}（1日 {gold_q.get('ret_1d_pct', 0):+.2f}%，高点回撤 {gold_dd:.1f}%）"
+                f" | 日线 RSI(14)={gold_rsi:.1f} | 50日线 ${gold_q.get('ma50', 3700):,.0f}"
+            ),
+            "consequence": (
+                f"在回购缓冲垫归零（RRP ${rrp_bn:.2f}B）与高波动压力下，机构被动卖出高流动性黄金补保证金，将金价砸入极端超卖区（RSI {gold_rsi:.0f}），形成流动性错杀折价。"
+                if is_gold_discount else
+                "金价与实际利率维持常规博弈，未出现流动性挤兑造成的显著错杀折价。"
+            ),
+            "conclusion": (
+                f"处于「打折期」：严禁加杠杆抄底，宜用现金分批逢低吸纳；一旦月末后资金缓解或站回 ${gold_q.get('ma50', 3700):,.0f} 将率先领涨。"
+                if is_gold_discount else
+                "维持常规底仓持有，等待回调或实际利率下行再加仓。"
+            ),
+        },
+        {
+            "domain": "AI 产业链内部分化与排雷",
+            "freq_badge": "盘中实时 + 日更利差",
+            "level": "danger" if (ant_broken_ipo or crwv_weak) else "warning",
+            "live_data": (
+                f"NVDA ${nvda_q.get('price', 0):.2f} ({nvda_q.get('ret_1d_pct', 0):+.1f}%) | "
+                f"CoreWeave ${crwv_q.get('price', 0):.2f} ({crwv_q.get('ret_1d_pct', 0):+.1f}%) | "
+                f"Anthropic ${ant_q.get('price', 0):.2f} (较IPO {ant_q.get('vs_ipo_pct', 0):+.1f}%) | CCC利率 {ccc_yield:.2f}%"
+            ),
+            "consequence": (
+                f"高达 {ccc_yield:.1f}% 的垃圾债融资成本正按资产负债表质量从下往上爆破：依赖外部举债的二线算力（CRWV）与抽血型次新（ANT）率先失血下挫，龙头独木难支。"
+            ),
+            "conclusion": (
+                "结构排雷：坚决规避高负债二线算力租赁与破发次新股，严禁马丁格尔补仓；仅保留现金流健康的极少数核心环节。"
+            ),
+        },
+        {
+            "domain": "美元回购水管与现金仓位",
+            "freq_badge": "FRED 日更",
+            "level": "danger" if plumbing_exploded else "warning",
+            "live_data": (
+                f"SOFR-IORB 利差 {sofr_sp:+.1f} bps | ON RRP ${rrp_bn:.2f}B | "
+                f"3M短债 {fred_m.get('DGS3MO', {}).get('value', 4.4):.2f}% vs 10Y美债 {dgs10:.2f}% | "
+                f"距月末结算 {bdays_me} 交易日"
+            ),
+            "consequence": (
+                "逆回购已耗尽，回购利率贴着走廊上限运行但尚未全面爆裂（「不是钱没了，是钱贵了」），美联储在管道真炸前不会降息救股市；月末结算日将迎来流动性压力峰值。"
+                if not plumbing_exploded else
+                "SOFR 大幅击穿走廊上限，隔夜回购管道受损，短期将触发跨资产砍仓，但也将倒逼美联储出手注水修管道！"
+            ),
+            "conclusion": (
+                f"超配 ~{fred_m.get('DGS3MO', {}).get('value', 4.4):.2f}% 短端美债现金（SHV/T-Bills）收息并留足干火药；紧盯 {cal.get('month_end_settlement')} 前后 SOFR 是否异动跳升。"
+            ),
+        },
+    ]
+
     return {
         "overall_risk_score": overall_risk,
         "headline": headline,
@@ -444,6 +523,7 @@ def analyze_market_snapshot(snapshot: dict[str, Any]) -> dict[str, Any]:
         "money_diagnosis": money_diagnosis,
         "is_dead_cat_bounce": is_dead_cat_bounce,
         "is_gold_discount": is_gold_discount,
+        "live_consequences": live_consequences,
         "pillars": {
             "plumbing": {
                 "title": "美元水管与结算节点",

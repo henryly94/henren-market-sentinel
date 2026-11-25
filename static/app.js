@@ -1,12 +1,11 @@
-/* Henren Market Sentinel — Mobile-First PWA, On-Visit Revalidator & Interactive Charts */
+/* Henren Market Sentinel — Live-Top / Static-Bottom Interactive Engine */
 (function () {
   "use strict";
 
   const STATE = {
-    mode: "detecting", // "api" | "static"
+    mode: "detecting",
     apiBase: (localStorage.getItem("sentinel_api_base") || "").replace(/\/+$/, ""),
     bundle: null,
-    pollTimer: null,
     lastCollectedUtc: null,
   };
 
@@ -80,6 +79,13 @@
     return "var(--signal-ok)";
   }
 
+  function tagClsForLevel(level) {
+    if (level === "danger") return "tag-danger";
+    if (level === "warning") return "tag-warning";
+    if (level === "opportunity") return "tag-opportunity";
+    return "tag-ok";
+  }
+
   function apiUrl(path) {
     if (STATE.apiBase) return `${STATE.apiBase}${path}`;
     return `.${path}`;
@@ -103,7 +109,7 @@
       ? `${sched.mode_label} (每${sched.interval_minutes || 60}m)`
       : STATE.mode === "api"
       ? "实时智能调度中"
-      : "GitHub云端定时巡检";
+      : "GitHub云端自动巡检";
     document.getElementById("meta-schedule-info").textContent = modeTxt;
 
     const reportLink = document.getElementById("btn-download-md");
@@ -112,7 +118,7 @@
     }
   }
 
-  function renderHeroAndPlaybook(bundle) {
+  function renderLiveTopAndConsequences(bundle) {
     const snap = bundle.snapshot || {};
     const ana = bundle.analysis || {};
     const pillars = ana.pillars || {};
@@ -137,15 +143,15 @@
         cls: options.in_negative_gamma ? "tag-warning" : "tag-ok",
       },
       {
-        text: `纳指厚防线 ~${fmtNum(options.major_put_wall?.ndx_equiv, 0)} (QQQ $${fmtNum(options.major_put_wall?.qqq_strike, 0)})`,
+        text: `厚防线 ~${fmtNum(options.major_put_wall?.ndx_equiv, 0)} (QQQ $${fmtNum(options.major_put_wall?.qqq_strike, 0)})`,
         cls: "tag",
       },
       {
-        text: `距月末结算(${cal.month_end_settlement || "--"}) ${cal.bdays_to_month_end ?? "--"} 交易日`,
+        text: `距月末结算 ${cal.bdays_to_month_end ?? "--"} 交易日`,
         cls: (cal.bdays_to_month_end ?? 10) <= 5 ? "tag-warning" : "tag",
       },
       {
-        text: ana.is_gold_discount ? "黄金: 钱荒洗金打折期" : "黄金: 常规跟踪",
+        text: ana.is_gold_discount ? "黄金: 打折期" : "黄金: 常规跟踪",
         cls: ana.is_gold_discount ? "tag-opportunity" : "tag",
       },
     ];
@@ -189,49 +195,66 @@
       })
       .join("");
 
+    // 6 Pure Intraday / Daily High-Frequency KPIs
+    const ndxQ = quotes["^NDX"] || {};
+    const goldQ = quotes["GC=F"] || {};
+    const nvdaQ = quotes["NVDA"] || {};
+    const crwvQ = quotes["CRWV"] || {};
+    const antQ = quotes["ANT"] || {};
+    const moveQ = quotes["^MOVE"] || {};
+    const vxnVal = quotes["^VXN"]?.price || fredM.VXNCLS?.value;
     const sofrSp = fredD.sofr_iorb_spread?.value_bps;
     const rrpVal = fredM.RRPONTSYD?.value;
     const cccYld = fredM.BAMLH0A3HYCEY?.value;
-    const ndxQ = quotes["^NDX"] || {};
-    const goldQ = quotes["GC=F"] || {};
-    const aiSum = (snap.ai_ledger || {}).summary || {};
 
     const kpis = [
       {
-        label: "SOFR − IORB 走廊利差",
-        value: `${fmtSigned(sofrSp, 1, " bps")}`,
-        sub: `SOFR ${fmtNum(fredM.SOFR?.value, 2)}% | RRP $${fmtNum(rrpVal, 2)}B`,
-        cls: sofrSp > 0 ? "warn-txt" : "",
-      },
-      {
-        label: "CCC级垃圾债借钱成本",
-        value: `${fmtNum(cccYld, 2)}%`,
-        sub: `OAS ${fmtNum(fredM.BAMLH0A3HYC?.value, 2)}% | IG ${fmtNum(fredM.BAMLC0A0CM?.value, 2)}%`,
-        cls: cccYld >= 15 ? "neg" : "",
-      },
-      {
-        label: "10Y 美债 / 实际利率",
-        value: `${fmtNum(fredM.DGS10?.value, 2)}%`,
-        sub: `TIPS实际 ${fmtNum(fredM.DFII10?.value, 2)}%`,
-        cls: "",
-      },
-      {
         label: "纳指100 (^NDX)",
+        freq: "盘中",
+        freqCls: "freq-live",
         value: fmtNum(ndxQ.price, 0),
         sub: `1日 ${fmtSigned(ndxQ.ret_1d_pct, 2, "%")} | 防线 ~${fmtNum(options.major_put_wall?.ndx_equiv, 0)}`,
         cls: clsSigned(ndxQ.ret_1d_pct),
       },
       {
-        label: "云五巨头年化算力账单",
-        value: `$${fmtNum(aiSum.annualized_capex_bn, 0)}B`,
-        sub: `${aiSum.negative_fcf_count || 0}/5 家FCF转负 (${fmtSigned(aiSum.quarterly_fcf_bn, 1, "B")})`,
-        cls: aiSum.quarterly_fcf_bn < 0 ? "neg" : "",
+        label: "COMEX 黄金 (GC=F)",
+        freq: "盘中",
+        freqCls: "freq-live",
+        value: `$${fmtNum(goldQ.price, 1)}`,
+        sub: `1日 ${fmtSigned(goldQ.ret_1d_pct, 2, "%")} | RSI(14) ${fmtNum(goldQ.rsi14, 0)}`,
+        cls: "gold-txt",
       },
       {
-        label: "COMEX 黄金 (GC=F)",
-        value: `$${fmtNum(goldQ.price, 1)}`,
-        sub: `RSI(14) ${fmtNum(goldQ.rsi14, 0)} | TGA $${fmtNum(fredM.WTREGEN?.value, 0)}B`,
-        cls: "gold-txt",
+        label: "AI 边缘风向 (CRWV)",
+        freq: "盘中",
+        freqCls: "freq-live",
+        value: `${fmtSigned(crwvQ.ret_1d_pct, 1, "%")}`,
+        sub: `NVDA ${fmtSigned(nvdaQ.ret_1d_pct, 1, "%")} | ANT $${fmtNum(antQ.price, 1)}`,
+        cls: clsSigned(crwvQ.ret_1d_pct),
+      },
+      {
+        label: "美债 MOVE / 纳指 VXN",
+        freq: "盘中",
+        freqCls: "freq-live",
+        value: `${fmtNum(moveQ.price, 1)} / ${fmtNum(vxnVal, 1)}`,
+        sub: `MOVE分位 ${fmtNum(moveQ.pct_1y, 0)}% | VIX ${fmtNum(quotes["^VIX"]?.price, 1)}`,
+        cls: "",
+      },
+      {
+        label: "SOFR − IORB 利差",
+        freq: "日更",
+        freqCls: "freq-daily",
+        value: `${fmtSigned(sofrSp, 1, " bps")}`,
+        sub: `SOFR ${fmtNum(fredM.SOFR?.value, 2)}% | RRP $${fmtNum(rrpVal, 2)}B`,
+        cls: sofrSp > 0 ? "warn-txt" : "",
+      },
+      {
+        label: "CCC 垃圾债借钱成本",
+        freq: "日更",
+        freqCls: "freq-daily",
+        value: `${fmtNum(cccYld, 2)}%`,
+        sub: `IG仅 ${fmtNum(fredM.BAMLC0A0CM?.value, 2)}% | 实际利率 ${fmtNum(fredM.DFII10?.value, 2)}%`,
+        cls: cccYld >= 15 ? "neg" : "",
       },
     ];
 
@@ -239,7 +262,10 @@
       .map(
         (k) => `
         <div class="kpi-box">
-          <div class="kpi-label">${k.label}</div>
+          <div class="kpi-head">
+            <span class="kpi-label">${k.label}</span>
+            <span class="freq-badge ${k.freqCls}">${k.freq}</span>
+          </div>
           <div class="kpi-value ${k.cls}">${k.value}</div>
           <div class="kpi-sub">${k.sub}</div>
         </div>
@@ -247,141 +273,32 @@
       )
       .join("");
 
-    document.getElementById("playbook-grid").innerHTML = (ana.allocation_cards || [])
+    // Render Live Data -> Consequence -> Conclusion Cards
+    const chains = ana.live_consequences || [];
+    document.getElementById("consequence-grid").innerHTML = chains
       .map(
-        (c) => `
-        <article class="playbook-item">
-          <div class="playbook-top">
-            <span class="playbook-asset">${c.asset}</span>
-            <span class="tag tag-opportunity">${c.signal_tag}</span>
+        (item) => `
+        <article class="consequence-card">
+          <div class="consequence-head">
+            <span class="consequence-domain">${item.domain}</span>
+            <span class="tag ${tagClsForLevel(item.level)}">${item.freq_badge}</span>
           </div>
-          <div class="playbook-stance">${c.stance}</div>
-          <p class="playbook-rationale">${c.rationale}</p>
-          <div class="playbook-trigger">${c.trigger}</div>
+          <div class="chain-step">
+            <span class="step-tag">实时数据</span>
+            <div class="step-data">${item.live_data}</div>
+          </div>
+          <div class="chain-step">
+            <span class="step-tag">产生后果</span>
+            <div class="step-body">${item.consequence}</div>
+          </div>
+          <div class="chain-step">
+            <span class="step-tag conclusion-tag">当下结论</span>
+            <div class="step-conclusion">${item.conclusion}</div>
+          </div>
         </article>
       `
       )
       .join("");
-  }
-
-  function renderLiquidityAndCredit(bundle) {
-    const snap = bundle.snapshot || {};
-    const ana = bundle.analysis || {};
-    const fredM = (snap.fred || {}).metrics || {};
-    const fredD = (snap.fred || {}).derived || {};
-    const netLiq = fredD.net_liquidity || {};
-    const series = netLiq.series || [];
-
-    document.getElementById("net-liq-subtitle").textContent =
-      `净流动性 $${fmtNum(netLiq.value_tn, 2)}T (近4周 ${fmtSigned(netLiq.chg_4w_bn, 0, "B")}) · 准备金 $${fmtNum((fredM.WRESBAL?.value || 0) / 1000, 2)}T`;
-
-    const liqBox = document.getElementById("chart-liquidity");
-    if (series.length >= 4) {
-      const W = 600, H = 215, padL = 48, padR = 46, padT = 16, padB = 26;
-      const plotW = W - padL - padR, plotH = H - padT - padB;
-      const nlVals = series.map((d) => d.net_liq_bn / 1000.0);
-      const tgaVals = series.map((d) => d.tga_bn);
-      const nlMin = Math.min(...nlVals) * 0.985, nlMax = Math.max(...nlVals) * 1.015;
-      const tgaMin = 0, tgaMax = Math.max(...tgaVals, 1000) * 1.08;
-
-      const xAt = (i) => padL + (i / (series.length - 1)) * plotW;
-      const yNl = (v) => padT + (1 - (v - nlMin) / Math.max(nlMax - nlMin, 0.01)) * plotH;
-      const yTga = (v) => padT + (1 - (v - tgaMin) / Math.max(tgaMax - tgaMin, 1)) * plotH;
-
-      const nlPath = series
-        .map((d, i) => `${i === 0 ? "M" : "L"}${xAt(i).toFixed(1)},${yNl(d.net_liq_bn / 1000).toFixed(1)}`)
-        .join(" ");
-      const tgaPath = series
-        .map((d, i) => `${i === 0 ? "M" : "L"}${xAt(i).toFixed(1)},${yTga(d.tga_bn).toFixed(1)}`)
-        .join(" ");
-
-      liqBox.innerHTML = `
-        <svg class="chart-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="美元净流动性与TGA曲线">
-          ${[nlMin, (nlMin + nlMax) / 2, nlMax]
-            .map((v) => {
-              const y = yNl(v).toFixed(1);
-              return `
-                <line x1="${padL}" y1="${y}" x2="${W - padR}" y2="${y}" stroke="rgba(255,255,255,0.06)" />
-                <text x="${padL - 6}" y="${Number(y) + 4}" text-anchor="end" fill="var(--accent-gold)" font-size="10" font-family="var(--font-mono)">$${v.toFixed(2)}T</text>
-              `;
-            })
-            .join("")}
-          ${[0, Math.round(tgaMax / 2), Math.round(tgaMax)]
-            .map((v) => {
-              const y = yTga(v).toFixed(1);
-              return `<text x="${W - padR + 6}" y="${Number(y) + 4}" text-anchor="start" fill="var(--series-cyan)" font-size="10" font-family="var(--font-mono)">$${v}B</text>`;
-            })
-            .join("")}
-          <path d="${tgaPath}" fill="none" stroke="var(--series-cyan)" stroke-width="1.6" stroke-dasharray="3 2" opacity="0.85" />
-          <path d="${nlPath}" fill="none" stroke="var(--accent-gold)" stroke-width="2.3" />
-          <text x="${padL}" y="${H - 6}" fill="var(--text-muted)" font-size="10" font-family="var(--font-mono)">${series[0].date}</text>
-          <text x="${W - padR}" y="${H - 6}" text-anchor="end" fill="var(--text-muted)" font-size="10" font-family="var(--font-mono)">${series[series.length - 1].date}</text>
-        </svg>
-      `;
-    }
-
-    const spHist = (fredD.sofr_iorb_spread || {}).history || [];
-    const spBox = document.getElementById("chart-sofr-spread");
-    if (spHist.length >= 5) {
-      const W = 520, H = 150, padL = 40, padR = 14, padT = 14, padB = 22;
-      const plotW = W - padL - padR, plotH = H - padT - padB;
-      const vals = spHist.map((d) => d.spread_bps);
-      const minV = Math.min(-6, ...vals) - 1;
-      const maxV = Math.max(8, ...vals) + 2;
-      const yAt = (v) => padT + (1 - (v - minV) / (maxV - minV)) * plotH;
-      const yZero = yAt(0);
-      const barW = Math.max(2, plotW / spHist.length - 1.4);
-
-      spBox.innerHTML = `
-        <svg class="chart-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="SOFR减IORB利差柱状图">
-          <line x1="${padL}" y1="${yZero.toFixed(1)}" x2="${W - padR}" y2="${yZero.toFixed(1)}" stroke="rgba(255,255,255,0.25)" stroke-dasharray="3 3" />
-          <text x="${padL - 5}" y="${yZero.toFixed(1)}" text-anchor="end" dominant-baseline="middle" fill="var(--text-muted)" font-size="10" font-family="var(--font-mono)">0bp</text>
-          <text x="${padL - 5}" y="${padT + 6}" text-anchor="end" fill="var(--signal-warn)" font-size="10" font-family="var(--font-mono)">+${maxV.toFixed(0)}bp</text>
-          <text x="${padL - 5}" y="${H - padB}" text-anchor="end" fill="var(--text-muted)" font-size="10" font-family="var(--font-mono)">${minV.toFixed(0)}bp</text>
-          ${spHist
-            .map((d, i) => {
-              const x = padL + (i / spHist.length) * plotW;
-              const yVal = yAt(d.spread_bps);
-              const top = Math.min(yZero, yVal);
-              const h = Math.max(1.5, Math.abs(yVal - yZero));
-              const col = d.spread_bps > 0 ? "var(--signal-warn)" : "var(--series-cyan)";
-              return `<rect x="${x.toFixed(1)}" y="${top.toFixed(1)}" width="${barW.toFixed(1)}" height="${h.toFixed(1)}" fill="${col}" opacity="0.88"><title>${d.date}: ${d.spread_bps} bps</title></rect>`;
-            })
-            .join("")}
-          <text x="${padL}" y="${H - 4}" fill="var(--text-muted)" font-size="10" font-family="var(--font-mono)">${spHist[0].date}</text>
-          <text x="${W - padR}" y="${H - 4}" text-anchor="end" fill="var(--text-muted)" font-size="10" font-family="var(--font-mono)">${spHist[spHist.length - 1].date}</text>
-        </svg>
-      `;
-    }
-
-    const creditRows = [
-      ["BAMLH0A3HYCEY", "CCC级垃圾债收益率 (最烂的债)"],
-      ["BAMLH0A3HYC", "CCC级垃圾债利差 (OAS)"],
-      ["BAMLH0A0HYM2", "高收益债整体利差 (HY OAS)"],
-      ["BAMLC0A0CM", "投资级大厂债利差 (IG OAS)"],
-      ["DFII10", "10Y TIPS 实际利率"],
-      ["DGS10", "10年期美债名义收益率"],
-      ["DGS2", "2年期美债名义收益率"],
-    ];
-    document.getElementById("credit-tier-tbody").innerHTML = creditRows
-      .map(([id, label]) => {
-        const m = fredM[id] || {};
-        const hiStress = (id === "BAMLH0A3HYCEY" && m.value >= 15) || m.pct_1y >= 85;
-        return `
-          <tr>
-            <td>${label}</td>
-            <td class="num ${hiStress ? "neg" : ""}">${fmtNum(m.value, 2)}${m.unit || "%"}</td>
-            <td class="num ${clsSigned(m.chg_20, true)}">${fmtSigned(m.chg_20, 2, "%")}</td>
-            <td class="num">${fmtNum(m.pct_1y, 0)}%</td>
-          </tr>
-        `;
-      })
-      .join("");
-
-    document.getElementById("plumbing-findings").innerHTML =
-      (ana.pillars?.plumbing?.findings || []).map((f) => `<li>${f}</li>`).join("");
-    document.getElementById("credit-findings").innerHTML =
-      (ana.pillars?.credit?.findings || []).map((f) => `<li>${f}</li>`).join("");
   }
 
   function updateGammaSandbox(ndxVal, opt) {
@@ -389,6 +306,7 @@
     const zeroG = opt?.zero_gamma_ndx || 27004;
     const putWall = opt?.major_put_wall?.ndx_equiv || 24649;
     const putWallQ = opt?.major_put_wall?.qqq_strike || 600;
+    const psychRound = opt?.psych_25000_check?.psych_round_ndx || 25000;
     const callWall = opt?.major_call_wall?.ndx_equiv || 28758;
     const ndx = Math.round(Number(ndxVal));
     const qqq = Math.round(ndx / ratio);
@@ -398,19 +316,18 @@
 
     const box = document.getElementById("sandbox-verdict-box");
     if (ndx >= zeroG) {
-      box.innerHTML = `<strong class="pos">【正 Gamma 缓冲区间 (&ge; ${zeroG.toLocaleString()})】</strong>：重新站上正负 Gamma 翻转线，做市商对冲回归「高抛低吸」压制波动率；若同时伴随 CCC 垃圾债利差拐头收敛，反抽才具备升级为趋势反转的条件，上方阻力墙看 ~${callWall.toLocaleString()}。`;
-    } else if (ndx >= 25150) {
-      box.innerHTML = `<strong class="warn-txt">【负 Gamma 放大区间 · 反抽非反转】</strong>：位于翻转线 ~${zeroG.toLocaleString()} 下方，做市商被迫「追涨杀跌」。在资金依然昂贵（CCC ~18%）背景下，突发利好推升的暴涨属于空头+做市商对冲挤压反抽，宜逢高降杠杆而非追高。`;
+      box.innerHTML = `<strong class="pos">【站上翻转线 &ge; ${zeroG.toLocaleString()} &rarr; 正 Gamma 护盘后果】</strong>：做市商回归高抛低吸压制波动；若 CCC 垃圾债利差同步回落，反抽可升级为趋势修复，上方目标阻力墙 ~${callWall.toLocaleString()}。`;
+    } else if (ndx >= psychRound + 150) {
+      box.innerHTML = `<strong class="warn-txt">【位于翻转线 ~${zeroG.toLocaleString()} 下方 &rarr; 负 Gamma 放大后果】</strong>：做市商被迫追涨杀跌，突发利好拉升极易在次日回吐（反抽非反转），结论：逢高降杠杆，不追高。`;
     } else if (ndx >= putWall - 80) {
-      box.innerHTML = `<strong class="gold-txt">【25,000 整数位失守 &rarr; 测试 ~${putWall.toLocaleString()} (QQQ $${putWallQ}) 最厚防线】</strong>：25,000 心理关口缺乏期权筹码保护易被击穿；真正多头最厚实盘 Put Wall 在 ~${putWall.toLocaleString()}，做市商平仓看跌对冲盘将在此处形成强支撑反抽。`;
+      box.innerHTML = `<strong class="gold-txt">【失守 ${psychRound.toLocaleString()} 整数关口 &rarr; 测试 ~${putWall.toLocaleString()} (QQQ $${putWallQ}) 最厚防线】</strong>：整数关口筹码单薄易被穿透；真正实盘看跌防线在 ~${putWall.toLocaleString()}，做市商平仓对冲盘将在此触发技术支撑。`;
     } else {
-      box.innerHTML = `<strong class="neg">【跌穿 ~${putWall.toLocaleString()} 最厚防线 · 二次去杠杆告警】</strong>：QQQ $${putWallQ} 核心防线失守将触发深度负 Gamma 机械助跌。此时紧盯 <strong>SOFR−IORB 是否飙破 +10bps</strong>——若管道被砸坏倒逼美联储修水管，黄金将率先暴力反弹。`;
+      box.innerHTML = `<strong class="neg">【击穿 ~${putWall.toLocaleString()} 最厚防线 &rarr; 尾部加速去杠杆后果】</strong>：核心期权墙失守引发加速助跌；结论：紧盯 SOFR−IORB 是否破 +10bps，若管道受损倒逼联储救市，黄金将先于美股暴力反弹。`;
     }
   }
 
-  function renderOptionsAndVol(bundle) {
+  function renderIntradayMarkets(bundle) {
     const snap = bundle.snapshot || {};
-    const ana = bundle.analysis || {};
     const opt = snap.options || {};
     const quotes = snap.quotes || {};
     const fredM = (snap.fred || {}).metrics || {};
@@ -420,10 +337,11 @@
       ? `聚合到期日 (${exps.length}个): ${exps.slice(0, 3).join(", ")} ... ${exps[exps.length - 1]}`
       : "实时期权链";
 
+    const psychRound = opt.psych_25000_check?.psych_round_ndx || 25000;
     const profile = opt.strike_profile || [];
     const box = document.getElementById("chart-options-walls");
     if (profile.length >= 5) {
-      const W = 620, H = 260, padL = 48, padR = 18, padT = 24, padB = 40;
+      const W = 620, H = 250, padL = 48, padR = 18, padT = 24, padB = 38;
       const plotW = W - padL - padR, plotH = H - padT - padB;
       const maxOI = Math.max(1, ...profile.map((p) => Math.max(p.put_oi, p.call_oi)));
       const stepW = plotW / profile.length;
@@ -435,7 +353,7 @@
 
       const xSpot = xForQ(opt.qqq_spot || 638);
       const xZeroG = xForQ(opt.zero_gamma_qqq || 660);
-      const x25k = xForQ(25000 / (opt.ndx_qqq_ratio || 41.08));
+      const xPsych = xForQ(psychRound / (opt.ndx_qqq_ratio || 41.08));
 
       box.innerHTML = `
         <svg class="chart-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="纳指100与QQQ期权未平仓筹码墙">
@@ -456,16 +374,16 @@
                 ${
                   showTick
                     ? `<text x="${cx.toFixed(1)}" y="${H - padB + 14}" text-anchor="middle" fill="var(--text-secondary)" font-size="9.5" font-family="var(--font-mono)">$${p.qqq_strike}</text>
-                       <text x="${cx.toFixed(1)}" y="${H - padB + 26}" text-anchor="middle" fill="var(--text-muted)" font-size="8.5" font-family="var(--font-mono)">${(p.ndx_equiv / 1000).toFixed(1)}k</text>`
+                       <text x="${cx.toFixed(1)}" y="${H - padB + 25}" text-anchor="middle" fill="var(--text-muted)" font-size="8.5" font-family="var(--font-mono)">${(p.ndx_equiv / 1000).toFixed(1)}k</text>`
                     : ""
                 }
               `;
             })
             .join("")}
           ${
-            x25k >= padL && x25k <= W - padR
-              ? `<line x1="${x25k.toFixed(1)}" y1="${padT + 12}" x2="${x25k.toFixed(1)}" y2="${H - padB}" stroke="rgba(255,255,255,0.35)" stroke-dasharray="2 3" />
-                 <text x="${x25k.toFixed(1)}" y="${padT + 8}" text-anchor="middle" fill="var(--text-muted)" font-size="9" font-family="var(--font-mono)">25k整数(薄)</text>`
+            xPsych >= padL && xPsych <= W - padR
+              ? `<line x1="${xPsych.toFixed(1)}" y1="${padT + 12}" x2="${xPsych.toFixed(1)}" y2="${H - padB}" stroke="rgba(255,255,255,0.35)" stroke-dasharray="2 3" />
+                 <text x="${xPsych.toFixed(1)}" y="${padT + 8}" text-anchor="middle" fill="var(--text-muted)" font-size="9" font-family="var(--font-mono)">${(psychRound / 1000).toFixed(0)}k整数(薄)</text>`
               : ""
           }
           <line x1="${xSpot.toFixed(1)}" y1="${padT}" x2="${xSpot.toFixed(1)}" y2="${H - padB}" stroke="var(--accent-gold)" stroke-width="2" />
@@ -480,7 +398,6 @@
       `;
     }
 
-    // Initialize interactive sandbox slider with live spot
     const slider = document.getElementById("sandbox-slider");
     const spotVal = Math.round(opt.ndx_spot || 26214);
     slider.min = String(Math.round((opt.major_put_wall?.ndx_equiv || 24650) - 1100));
@@ -489,77 +406,80 @@
     updateGammaSandbox(spotVal, opt);
     slider.oninput = (e) => updateGammaSandbox(e.target.value, opt);
 
+    // Gold 60d live chart
+    const goldQ = quotes["GC=F"] || {};
+    const hist = goldQ.history_60d || [];
+    document.getElementById("gold-chart-subtitle").textContent =
+      `黄金 $${fmtNum(goldQ.price, 1)} · RSI(14)=${fmtNum(goldQ.rsi14, 0)} · 200日线 $${fmtNum(goldQ.ma200, 0)}`;
+
+    const goldBox = document.getElementById("chart-gold");
+    if (hist.length >= 5) {
+      const W = 560, H = 175, padL = 48, padR = 14, padT = 14, padB = 22;
+      const plotW = W - padL - padR, plotH = H - padT - padB;
+      const vals = hist.map((d) => d.close);
+      const ma200 = goldQ.ma200 || vals[0];
+      const minV = Math.min(ma200, ...vals) * 0.985;
+      const maxV = Math.max(ma200, ...vals) * 1.015;
+      const xAt = (i) => padL + (i / (hist.length - 1)) * plotW;
+      const yAt = (v) => padT + (1 - (v - minV) / Math.max(maxV - minV, 1)) * plotH;
+
+      const linePath = hist
+        .map((d, i) => `${i === 0 ? "M" : "L"}${xAt(i).toFixed(1)},${yAt(d.close).toFixed(1)}`)
+        .join(" ");
+      const areaPath = `${linePath} L${xAt(hist.length - 1).toFixed(1)},${H - padB} L${padL},${H - padB} Z`;
+      const yMa200 = yAt(ma200);
+
+      goldBox.innerHTML = `
+        <svg class="chart-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="黄金60日实时走势与200日均线">
+          <defs>
+            <linearGradient id="goldAreaGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="hsl(41, 70%, 57%)" stop-opacity="0.25" />
+              <stop offset="100%" stop-color="hsl(41, 70%, 57%)" stop-opacity="0.0" />
+            </linearGradient>
+          </defs>
+          ${[minV, (minV + maxV) / 2, maxV]
+            .map((v) => {
+              const y = yAt(v).toFixed(1);
+              return `
+                <line x1="${padL}" y1="${y}" x2="${W - padR}" y2="${y}" stroke="rgba(255,255,255,0.06)" />
+                <text x="${padL - 6}" y="${Number(y) + 4}" text-anchor="end" fill="var(--text-muted)" font-size="9.5" font-family="var(--font-mono)">$${v.toFixed(0)}</text>
+              `;
+            })
+            .join("")}
+          <line x1="${padL}" y1="${yMa200.toFixed(1)}" x2="${W - padR}" y2="${yMa200.toFixed(1)}" stroke="var(--signal-ok)" stroke-dasharray="4 3" stroke-width="1.4" />
+          <text x="${padL + 6}" y="${Math.max(12, yMa200 - 4).toFixed(1)}" fill="var(--signal-ok)" font-size="9" font-family="var(--font-mono)">200DMA $${fmtNum(ma200, 0)}</text>
+          <path d="${areaPath}" fill="url(#goldAreaGrad)" />
+          <path d="${linePath}" fill="none" stroke="var(--accent-gold)" stroke-width="2.1" />
+          <text x="${padL}" y="${H - 4}" fill="var(--text-muted)" font-size="9.5" font-family="var(--font-mono)">${hist[0].date}</text>
+          <text x="${W - padR}" y="${H - 4}" text-anchor="end" fill="var(--text-muted)" font-size="9.5" font-family="var(--font-mono)">${hist[hist.length - 1].date}</text>
+        </svg>
+      `;
+    }
+
     const moveQ = quotes["^MOVE"] || {};
     const vxnVal = quotes["^VXN"]?.price || fredM.VXNCLS?.value;
     const vxnPct = quotes["^VXN"]?.pct_1y || fredM.VXNCLS?.pct_1y;
     const vixQ = quotes["^VIX"] || {};
 
     const optRows = [
-      ["纳指100 现价 (^NDX)", fmtNum(opt.ndx_spot, 0), `QQQ $${fmtNum(opt.qqq_spot, 2)}`],
-      [
-        "正负 Gamma 翻转位",
-        `~${fmtNum(opt.zero_gamma_ndx, 0)}`,
-        `QQQ $${fmtNum(opt.zero_gamma_qqq, 1)} (${opt.in_negative_gamma ? "负Gamma" : "正Gamma"})`,
-      ],
-      [
-        "近端第一看跌支撑",
-        `~${fmtNum(opt.near_put_support?.ndx_equiv, 0)}`,
-        `QQQ $${fmtNum(opt.near_put_support?.qqq_strike, 0)} (OI ${fmtNum(opt.near_put_support?.open_interest, 0)})`,
-      ],
-      [
-        "多头最厚期权防线 (Put Wall)",
-        `~${fmtNum(opt.major_put_wall?.ndx_equiv, 0)}`,
-        `QQQ $${fmtNum(opt.major_put_wall?.qqq_strike, 0)} (OI ${fmtNum(opt.major_put_wall?.open_interest, 0)})`,
-      ],
-      [
-        "上方最大看涨阻力墙 (Call Wall)",
-        `~${fmtNum(opt.major_call_wall?.ndx_equiv, 0)}`,
-        `QQQ $${fmtNum(opt.major_call_wall?.qqq_strike, 0)} (OI ${fmtNum(opt.major_call_wall?.open_interest, 0)})`,
-      ],
-      ["Put / Call 未平仓比", fmtNum(opt.put_call_oi_ratio, 2), "大于1.2代表保护拥挤"],
-      ["美债波动率 MOVE", fmtNum(moveQ.price, 1), `1年分位 ${fmtNum(moveQ.pct_1y, 0)}%`],
-      ["纳指 VXN / 标普 VIX", `${fmtNum(vxnVal, 1)} / ${fmtNum(vixQ.price, 1)}`, `VXN 分位 ${fmtNum(vxnPct, 0)}%`],
+      ["正负 Gamma 翻转位", `~${fmtNum(opt.zero_gamma_ndx, 0)}`, `QQQ $${fmtNum(opt.zero_gamma_qqq, 1)} (${opt.in_negative_gamma ? "负Gamma" : "正Gamma"})`],
+      ["近端第一看跌支撑", `~${fmtNum(opt.near_put_support?.ndx_equiv, 0)}`, `QQQ $${fmtNum(opt.near_put_support?.qqq_strike, 0)} (OI ${fmtNum(opt.near_put_support?.open_interest, 0)})`],
+      ["多头最厚防线 (Put Wall)", `~${fmtNum(opt.major_put_wall?.ndx_equiv, 0)}`, `QQQ $${fmtNum(opt.major_put_wall?.qqq_strike, 0)} (OI ${fmtNum(opt.major_put_wall?.open_interest, 0)})`],
+      [`${psychRound.toLocaleString()} 整数关口对比`, `~${psychRound.toLocaleString()}`, `厚防线筹码是此处的 ${fmtNum(opt.psych_25000_check?.wall_to_25000_oi_ratio, 1)} 倍`],
+      ["上方最大看涨阻力墙", `~${fmtNum(opt.major_call_wall?.ndx_equiv, 0)}`, `QQQ $${fmtNum(opt.major_call_wall?.qqq_strike, 0)} (OI ${fmtNum(opt.major_call_wall?.open_interest, 0)})`],
+      ["美债 MOVE vs 纳指 VXN", `${fmtNum(moveQ.price, 1)} / ${fmtNum(vxnVal, 1)}`, `分位 ${fmtNum(moveQ.pct_1y, 0)}% vs ${fmtNum(vxnPct, 0)}% (VIX ${fmtNum(vixQ.price, 1)})`],
     ];
-
     document.getElementById("options-summary-tbody").innerHTML = optRows
       .map(([k, v, sub]) => `<tr><td>${k}</td><td class="num">${v}</td><td class="num">${sub}</td></tr>`)
       .join("");
 
-    document.getElementById("micro-findings").innerHTML =
-      (ana.pillars?.microstructure?.findings || []).map((f) => `<li>${f}</li>`).join("");
-  }
-
-  function renderAiAudit(bundle) {
-    const snap = bundle.snapshot || {};
-    const ana = bundle.analysis || {};
-    const aiPillar = ana.pillars?.ai_ledger || {};
-    const aiLedger = snap.ai_ledger || {};
-    const quotes = snap.quotes || {};
-
-    const signals = aiPillar.peak_signals || [];
-    document.getElementById("ai-triggered-badge").textContent =
-      `已触发 ${aiPillar.triggered_count || 0} / ${signals.length || 5} 项见顶信号`;
-
-    document.getElementById("ai-signals-list").innerHTML = signals
-      .map(
-        (s) => `
-        <div class="signal-row">
-          <div>
-            <div class="signal-name">${s.name}</div>
-            <div class="signal-detail">${s.detail}</div>
-          </div>
-          <span class="tag ${s.triggered ? "tag-danger" : "tag-ok"}">${s.triggered ? "已触发" : "未触发"}</span>
-        </div>
-      `
-      )
-      .join("");
-
+    // AI Equities live table
     const aiTickers = [
       ["NVDA", "核心算力芯片"],
       ["AVGO", "定制ASIC"],
       ["SMH", "半导体ETF"],
       ["ANT", "Anthropic"],
-      ["CRWV", "CoreWeave"],
+      ["CRWV", "CoreWeave (二线算力债)"],
       ["VST", "AI电力瓶颈"],
     ];
     document.getElementById("ai-equities-tbody").innerHTML = aiTickers
@@ -578,121 +498,7 @@
       })
       .join("");
 
-    const comps = aiLedger.companies || [];
-    const sum = aiLedger.summary || {};
-    document.getElementById("ai-capex-summary-label").textContent =
-      `年化 CapEx $${fmtNum(sum.annualized_capex_bn, 0)}B · 单季合计 FCF $${fmtSigned(sum.quarterly_fcf_bn, 1, "B")}`;
-
-    const chartEl = document.getElementById("chart-ai-capex");
-    if (comps.length > 0) {
-      const W = 540, H = 190, padL = 44, padR = 14, padT = 16, padB = 26;
-      const plotW = W - padL - padR, plotH = H - padT - padB;
-      const maxV = Math.max(10, ...comps.map((c) => Math.max(c.ocf_bn, c.capex_bn))) * 1.12;
-      const grpW = plotW / comps.length;
-      const bW = Math.min(24, grpW * 0.3);
-
-      chartEl.innerHTML = `
-        <svg class="chart-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="云五巨头经营现金流与资本开支对比">
-          <line x1="${padL}" y1="${H - padB}" x2="${W - padR}" y2="${H - padB}" stroke="rgba(255,255,255,0.18)" />
-          ${[0, Math.round(maxV / 2), Math.round(maxV)]
-            .map((v) => {
-              const y = (H - padB - (v / maxV) * plotH).toFixed(1);
-              return `
-                <line x1="${padL}" y1="${y}" x2="${W - padR}" y2="${y}" stroke="rgba(255,255,255,0.06)" />
-                <text x="${padL - 6}" y="${Number(y) + 4}" text-anchor="end" fill="var(--text-muted)" font-size="10" font-family="var(--font-mono)">$${v}B</text>
-              `;
-            })
-            .join("")}
-          ${comps
-            .map((c, i) => {
-              const cx = padL + (i + 0.5) * grpW;
-              const hOcf = (c.ocf_bn / maxV) * plotH;
-              const hCap = (c.capex_bn / maxV) * plotH;
-              return `
-                <rect x="${(cx - bW - 2).toFixed(1)}" y="${(H - padB - hOcf).toFixed(1)}" width="${bW}" height="${hOcf.toFixed(1)}" fill="var(--series-cyan)" rx="2"></rect>
-                <rect x="${(cx + 2).toFixed(1)}" y="${(H - padB - hCap).toFixed(1)}" width="${bW}" height="${hCap.toFixed(1)}" fill="${c.fcf_negative ? "var(--signal-danger)" : "var(--signal-warn)"}" rx="2"></rect>
-                <text x="${cx.toFixed(1)}" y="${H - 8}" text-anchor="middle" fill="var(--text-primary)" font-size="11" font-weight="600" font-family="var(--font-mono)">${c.symbol}</text>
-              `;
-            })
-            .join("")}
-        </svg>
-      `;
-    }
-
-    document.getElementById("ai-ledger-tbody").innerHTML = comps
-      .map(
-        (c) => `
-        <tr>
-          <td><strong>${c.symbol}</strong></td>
-          <td>${c.quarter_end.slice(2)}</td>
-          <td class="num">$${fmtNum(c.ocf_bn, 1)}B</td>
-          <td class="num">$${fmtNum(c.capex_bn, 1)}B</td>
-          <td class="num ${c.fcf_negative ? "neg" : "pos"}">${fmtSigned(c.fcf_bn, 1, "B")}</td>
-          <td class="num ${c.capex_to_ocf_pct > 100 ? "neg" : "warn-txt"}">${fmtNum(c.capex_to_ocf_pct, 0)}%</td>
-        </tr>
-      `
-      )
-      .join("");
-  }
-
-  function renderGoldAndSchedule(bundle) {
-    const snap = bundle.snapshot || {};
-    const ana = bundle.analysis || {};
-    const sched = bundle.scheduler || {};
-    const quotes = snap.quotes || {};
-    const goldQ = quotes["GC=F"] || {};
-    const hist = goldQ.history_60d || [];
-
-    document.getElementById("gold-chart-subtitle").textContent =
-      `现价 $${fmtNum(goldQ.price, 1)} · RSI(14)=${fmtNum(goldQ.rsi14, 0)} · 200日线 $${fmtNum(goldQ.ma200, 0)}`;
-
-    const goldBox = document.getElementById("chart-gold");
-    if (hist.length >= 5) {
-      const W = 580, H = 200, padL = 50, padR = 16, padT = 16, padB = 24;
-      const plotW = W - padL - padR, plotH = H - padT - padB;
-      const vals = hist.map((d) => d.close);
-      const ma200 = goldQ.ma200 || vals[0];
-      const minV = Math.min(ma200, ...vals) * 0.985;
-      const maxV = Math.max(ma200, ...vals) * 1.015;
-      const xAt = (i) => padL + (i / (hist.length - 1)) * plotW;
-      const yAt = (v) => padT + (1 - (v - minV) / Math.max(maxV - minV, 1)) * plotH;
-
-      const linePath = hist
-        .map((d, i) => `${i === 0 ? "M" : "L"}${xAt(i).toFixed(1)},${yAt(d.close).toFixed(1)}`)
-        .join(" ");
-      const areaPath = `${linePath} L${xAt(hist.length - 1).toFixed(1)},${H - padB} L${padL},${H - padB} Z`;
-      const yMa200 = yAt(ma200);
-
-      goldBox.innerHTML = `
-        <svg class="chart-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="黄金60日走势与200日均线">
-          <defs>
-            <linearGradient id="goldAreaGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="hsl(41, 70%, 57%)" stop-opacity="0.26" />
-              <stop offset="100%" stop-color="hsl(41, 70%, 57%)" stop-opacity="0.0" />
-            </linearGradient>
-          </defs>
-          ${[minV, (minV + maxV) / 2, maxV]
-            .map((v) => {
-              const y = yAt(v).toFixed(1);
-              return `
-                <line x1="${padL}" y1="${y}" x2="${W - padR}" y2="${y}" stroke="rgba(255,255,255,0.06)" />
-                <text x="${padL - 6}" y="${Number(y) + 4}" text-anchor="end" fill="var(--text-muted)" font-size="10" font-family="var(--font-mono)">$${v.toFixed(0)}</text>
-              `;
-            })
-            .join("")}
-          <line x1="${padL}" y1="${yMa200.toFixed(1)}" x2="${W - padR}" y2="${yMa200.toFixed(1)}" stroke="var(--signal-ok)" stroke-dasharray="4 3" stroke-width="1.4" />
-          <text x="${padL + 6}" y="${Math.max(12, yMa200 - 5).toFixed(1)}" fill="var(--signal-ok)" font-size="9.5" font-family="var(--font-mono)">200DMA $${fmtNum(ma200, 0)}</text>
-          <path d="${areaPath}" fill="url(#goldAreaGrad)" />
-          <path d="${linePath}" fill="none" stroke="var(--accent-gold)" stroke-width="2.2" />
-          <text x="${padL}" y="${H - 5}" fill="var(--text-muted)" font-size="10" font-family="var(--font-mono)">${hist[0].date}</text>
-          <text x="${W - padR}" y="${H - 5}" text-anchor="end" fill="var(--text-muted)" font-size="10" font-family="var(--font-mono)">${hist[hist.length - 1].date}</text>
-        </svg>
-      `;
-    }
-
-    document.getElementById("gold-findings").innerHTML =
-      (ana.pillars?.gold_spillover?.findings || []).map((f) => `<li>${f}</li>`).join("");
-
+    // Cross-market live table
     const crossList = [
       ["GC=F", "COMEX 黄金期货"],
       ["HG=F", "COMEX 铜期货"],
@@ -719,21 +525,213 @@
         `;
       })
       .join("");
+  }
 
-    // Smart Schedule & Checkpoints
+  function renderDailyPlumbing(bundle) {
+    const snap = bundle.snapshot || {};
+    const fredM = (snap.fred || {}).metrics || {};
+    const fredD = (snap.fred || {}).derived || {};
+
+    const spHist = (fredD.sofr_iorb_spread || {}).history || [];
+    const spBox = document.getElementById("chart-sofr-spread");
+    if (spHist.length >= 5) {
+      const W = 540, H = 185, padL = 42, padR = 14, padT = 16, padB = 24;
+      const plotW = W - padL - padR, plotH = H - padT - padB;
+      const vals = spHist.map((d) => d.spread_bps);
+      const minV = Math.min(-6, ...vals) - 1;
+      const maxV = Math.max(8, ...vals) + 2;
+      const yAt = (v) => padT + (1 - (v - minV) / (maxV - minV)) * plotH;
+      const yZero = yAt(0);
+      const barW = Math.max(2, plotW / spHist.length - 1.4);
+
+      spBox.innerHTML = `
+        <svg class="chart-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="SOFR减IORB利差柱状图">
+          <line x1="${padL}" y1="${yZero.toFixed(1)}" x2="${W - padR}" y2="${yZero.toFixed(1)}" stroke="rgba(255,255,255,0.25)" stroke-dasharray="3 3" />
+          <text x="${padL - 5}" y="${yZero.toFixed(1)}" text-anchor="end" dominant-baseline="middle" fill="var(--text-muted)" font-size="10" font-family="var(--font-mono)">0bp</text>
+          <text x="${padL - 5}" y="${padT + 6}" text-anchor="end" fill="var(--signal-warn)" font-size="10" font-family="var(--font-mono)">+${maxV.toFixed(0)}bp</text>
+          <text x="${padL - 5}" y="${H - padB}" text-anchor="end" fill="var(--text-muted)" font-size="10" font-family="var(--font-mono)">${minV.toFixed(0)}bp</text>
+          ${spHist
+            .map((d, i) => {
+              const x = padL + (i / spHist.length) * plotW;
+              const yVal = yAt(d.spread_bps);
+              const top = Math.min(yZero, yVal);
+              const h = Math.max(1.5, Math.abs(yVal - yZero));
+              const col = d.spread_bps > 0 ? "var(--signal-warn)" : "var(--series-cyan)";
+              return `<rect x="${x.toFixed(1)}" y="${top.toFixed(1)}" width="${barW.toFixed(1)}" height="${h.toFixed(1)}" fill="${col}" opacity="0.88"><title>${d.date}: ${d.spread_bps} bps</title></rect>`;
+            })
+            .join("")}
+          <text x="${padL}" y="${H - 5}" fill="var(--text-muted)" font-size="10" font-family="var(--font-mono)">${spHist[0].date}</text>
+          <text x="${W - padR}" y="${H - 5}" text-anchor="end" fill="var(--text-muted)" font-size="10" font-family="var(--font-mono)">${spHist[spHist.length - 1].date}</text>
+        </svg>
+      `;
+    }
+
+    const creditRows = [
+      ["BAMLH0A3HYCEY", "CCC级垃圾债有效收益率 (底层边缘债)"],
+      ["BAMLH0A3HYC", "CCC级垃圾债利差 (OAS)"],
+      ["BAMLH0A0HYM2", "高收益债整体利差 (HY OAS)"],
+      ["BAMLC0A0CM", "投资级大厂债利差 (IG OAS)"],
+      ["DFII10", "10Y TIPS 实际利率"],
+      ["DGS10", "10年期美债名义收益率"],
+      ["DGS3MO", "3个月短端美债收益率 (现金替代)"],
+    ];
+    document.getElementById("credit-tier-tbody").innerHTML = creditRows
+      .map(([id, label]) => {
+        const m = fredM[id] || {};
+        const hiStress = (id === "BAMLH0A3HYCEY" && m.value >= 15) || m.pct_1y >= 85;
+        return `
+          <tr>
+            <td>${label}</td>
+            <td class="num ${hiStress ? "neg" : ""}">${fmtNum(m.value, 2)}${m.unit || "%"}</td>
+            <td class="num ${clsSigned(m.chg_20, true)}">${fmtSigned(m.chg_20, 2, "%")}</td>
+            <td class="num">${fmtNum(m.pct_1y, 0)}%</td>
+          </tr>
+        `;
+      })
+      .join("");
+  }
+
+  function renderSupplementaryBottom(bundle) {
+    const snap = bundle.snapshot || {};
+    const ana = bundle.analysis || {};
+    const sched = bundle.scheduler || {};
+    const fredM = (snap.fred || {}).metrics || {};
+    const fredD = (snap.fred || {}).derived || {};
+    const aiLedger = snap.ai_ledger || {};
+    const aiPillar = ana.pillars?.ai_ledger || {};
+
+    // Slow Quarterly Hyperscaler CapEx
+    const comps = aiLedger.companies || [];
+    const sum = aiLedger.summary || {};
+    document.getElementById("ai-capex-summary-label").textContent =
+      `年化算力开支 $${fmtNum(sum.annualized_capex_bn, 0)}B · 单季合计 FCF $${fmtSigned(sum.quarterly_fcf_bn, 1, "B")}`;
+
+    const chartEl = document.getElementById("chart-ai-capex");
+    if (comps.length > 0) {
+      const W = 520, H = 175, padL = 44, padR = 14, padT = 16, padB = 24;
+      const plotW = W - padL - padR, plotH = H - padT - padB;
+      const maxV = Math.max(10, ...comps.map((c) => Math.max(c.ocf_bn, c.capex_bn))) * 1.12;
+      const grpW = plotW / comps.length;
+      const bW = Math.min(22, grpW * 0.28);
+
+      chartEl.innerHTML = `
+        <svg class="chart-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="云五巨头季报现金流与资本开支对比">
+          <line x1="${padL}" y1="${H - padB}" x2="${W - padR}" y2="${H - padB}" stroke="rgba(255,255,255,0.18)" />
+          ${[0, Math.round(maxV / 2), Math.round(maxV)]
+            .map((v) => {
+              const y = (H - padB - (v / maxV) * plotH).toFixed(1);
+              return `
+                <line x1="${padL}" y1="${y}" x2="${W - padR}" y2="${y}" stroke="rgba(255,255,255,0.06)" />
+                <text x="${padL - 6}" y="${Number(y) + 4}" text-anchor="end" fill="var(--text-muted)" font-size="9.5" font-family="var(--font-mono)">$${v}B</text>
+              `;
+            })
+            .join("")}
+          ${comps
+            .map((c, i) => {
+              const cx = padL + (i + 0.5) * grpW;
+              const hOcf = (c.ocf_bn / maxV) * plotH;
+              const hCap = (c.capex_bn / maxV) * plotH;
+              return `
+                <rect x="${(cx - bW - 2).toFixed(1)}" y="${(H - padB - hOcf).toFixed(1)}" width="${bW}" height="${hOcf.toFixed(1)}" fill="var(--series-cyan)" rx="2"></rect>
+                <rect x="${(cx + 2).toFixed(1)}" y="${(H - padB - hCap).toFixed(1)}" width="${bW}" height="${hCap.toFixed(1)}" fill="${c.fcf_negative ? "var(--signal-danger)" : "var(--signal-warn)"}" rx="2"></rect>
+                <text x="${cx.toFixed(1)}" y="${H - 7}" text-anchor="middle" fill="var(--text-primary)" font-size="10.5" font-weight="600" font-family="var(--font-mono)">${c.symbol}</text>
+              `;
+            })
+            .join("")}
+        </svg>
+      `;
+    }
+
+    document.getElementById("ai-ledger-tbody").innerHTML = comps
+      .map(
+        (c) => `
+        <tr>
+          <td><strong>${c.symbol}</strong></td>
+          <td>${c.quarter_end.slice(2)}</td>
+          <td class="num">$${fmtNum(c.ocf_bn, 1)}B</td>
+          <td class="num">$${fmtNum(c.capex_bn, 1)}B</td>
+          <td class="num ${c.fcf_negative ? "neg" : "pos"}">${fmtSigned(c.fcf_bn, 1, "B")}</td>
+          <td class="num ${c.capex_to_ocf_pct > 100 ? "neg" : "warn-txt"}">${fmtNum(c.capex_to_ocf_pct, 0)}%</td>
+        </tr>
+      `
+      )
+      .join("");
+
+    document.getElementById("ai-signals-list").innerHTML = (aiPillar.peak_signals || [])
+      .map(
+        (s) => `
+        <div class="signal-row">
+          <div>
+            <div class="signal-name">${s.name}</div>
+            <div class="signal-detail">${s.detail}</div>
+          </div>
+          <span class="tag ${s.triggered ? "tag-danger" : "tag-ok"}">${s.triggered ? "已触发" : "未触发"}</span>
+        </div>
+      `
+      )
+      .join("");
+
+    // Weekly Fed Balance Sheet Net Liquidity
+    const netLiq = fredD.net_liquidity || {};
+    const series = netLiq.series || [];
+    document.getElementById("net-liq-subtitle").textContent =
+      `净流动性 $${fmtNum(netLiq.value_tn, 2)}T · 银行准备金 $${fmtNum((fredM.WRESBAL?.value || 0) / 1000, 2)}T · TGA $${fmtNum(fredM.WTREGEN?.value, 0)}B`;
+
+    const liqBox = document.getElementById("chart-liquidity");
+    if (series.length >= 4) {
+      const W = 540, H = 175, padL = 46, padR = 44, padT = 14, padB = 22;
+      const plotW = W - padL - padR, plotH = H - padT - padB;
+      const nlVals = series.map((d) => d.net_liq_bn / 1000.0);
+      const tgaVals = series.map((d) => d.tga_bn);
+      const nlMin = Math.min(...nlVals) * 0.985, nlMax = Math.max(...nlVals) * 1.015;
+      const tgaMin = 0, tgaMax = Math.max(...tgaVals, 1000) * 1.08;
+
+      const xAt = (i) => padL + (i / (series.length - 1)) * plotW;
+      const yNl = (v) => padT + (1 - (v - nlMin) / Math.max(nlMax - nlMin, 0.01)) * plotH;
+      const yTga = (v) => padT + (1 - (v - tgaMin) / Math.max(tgaMax - tgaMin, 1)) * plotH;
+
+      const nlPath = series
+        .map((d, i) => `${i === 0 ? "M" : "L"}${xAt(i).toFixed(1)},${yNl(d.net_liq_bn / 1000).toFixed(1)}`)
+        .join(" ");
+      const tgaPath = series
+        .map((d, i) => `${i === 0 ? "M" : "L"}${xAt(i).toFixed(1)},${yTga(d.tga_bn).toFixed(1)}`)
+        .join(" ");
+
+      liqBox.innerHTML = `
+        <svg class="chart-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="美元净流动性与TGA周报曲线">
+          ${[nlMin, (nlMin + nlMax) / 2, nlMax]
+            .map((v) => {
+              const y = yNl(v).toFixed(1);
+              return `
+                <line x1="${padL}" y1="${y}" x2="${W - padR}" y2="${y}" stroke="rgba(255,255,255,0.06)" />
+                <text x="${padL - 5}" y="${Number(y) + 4}" text-anchor="end" fill="var(--accent-gold)" font-size="9.5" font-family="var(--font-mono)">$${v.toFixed(2)}T</text>
+              `;
+            })
+            .join("")}
+          ${[0, Math.round(tgaMax / 2), Math.round(tgaMax)]
+            .map((v) => {
+              const y = yTga(v).toFixed(1);
+              return `<text x="${W - padR + 5}" y="${Number(y) + 4}" text-anchor="start" fill="var(--series-cyan)" font-size="9.5" font-family="var(--font-mono)">$${v}B</text>`;
+            })
+            .join("")}
+          <path d="${tgaPath}" fill="none" stroke="var(--series-cyan)" stroke-width="1.5" stroke-dasharray="3 2" opacity="0.85" />
+          <path d="${nlPath}" fill="none" stroke="var(--accent-gold)" stroke-width="2.1" />
+          <text x="${padL}" y="${H - 4}" fill="var(--text-muted)" font-size="9.5" font-family="var(--font-mono)">${series[0].date}</text>
+          <text x="${W - padR}" y="${H - 4}" text-anchor="end" fill="var(--text-muted)" font-size="9.5" font-family="var(--font-mono)">${series[series.length - 1].date}</text>
+        </svg>
+      `;
+    }
+
     document.getElementById("schedule-mode-subtitle").textContent = sched.mode_label
-      ? `当前档位：${sched.mode_label}（自动周期 ${sched.interval_minutes}m · 打开页面超 ${Math.round((sched.visit_stale_seconds || 300) / 60)}m 自动静默重抓）`
-      : "周期巡检 + 关键时间点加密 + 主动访问新鲜度校验";
+      ? `${sched.mode_label} (${sched.interval_minutes}m)`
+      : "智能调度";
 
-    const cps = sched.upcoming_checkpoints || [];
-    document.getElementById("checkpoints-tbody").innerHTML = cps
+    document.getElementById("checkpoints-tbody").innerHTML = (sched.upcoming_checkpoints || [])
+      .slice(0, 6)
       .map(
         (ev) => `
         <tr>
-          <td>
-            <div style="font-weight:600; color:var(--text-primary);">${ev.title}</div>
-            <div style="font-size:0.76rem; color:var(--text-muted);">${ev.purpose}</div>
-          </td>
+          <td><strong>${ev.title}</strong></td>
           <td class="num">${ev.time_et}</td>
           <td class="num gold-txt">${formatLocalTime(ev.time_utc)}</td>
         </tr>
@@ -744,11 +742,11 @@
 
   function renderHistoryRows(runs) {
     document.getElementById("history-tbody").innerHTML = (runs || [])
-      .slice(0, 15)
+      .slice(0, 10)
       .map(
         (r) => `
         <tr>
-          <td class="num">#${r.id} <span style="color:var(--text-muted); font-size:0.73rem;">[${r.trigger_source || "auto"}]</span></td>
+          <td class="num">#${r.id} <span style="color:var(--text-muted); font-size:0.72rem;">[${r.trigger_source || "auto"}]</span></td>
           <td style="font-family:var(--font-mono)">${formatLocalTime(r.collected_at_utc)}</td>
           <td class="num"><strong>${r.overall_risk_score}</strong></td>
           <td class="num gold-txt">${r.gold_opp_score}</td>
@@ -763,26 +761,20 @@
   function renderAll(bundle) {
     STATE.bundle = bundle;
     renderTopMeta(bundle);
-    renderHeroAndPlaybook(bundle);
-    renderLiquidityAndCredit(bundle);
-    renderOptionsAndVol(bundle);
-    renderAiAudit(bundle);
-    renderGoldAndSchedule(bundle);
+    renderLiveTopAndConsequences(bundle);
+    renderIntradayMarkets(bundle);
+    renderDailyPlumbing(bundle);
+    renderSupplementaryBottom(bundle);
   }
 
   async function loadHistory() {
     try {
-      const url =
-        STATE.mode === "api"
-          ? apiUrl("/api/history")
-          : `./data/history.json?_t=${Date.now()}`;
+      const url = STATE.mode === "api" ? apiUrl("/api/history") : `./data/history.json?_t=${Date.now()}`;
       const resp = await fetch(url, { cache: "no-store" });
       if (!resp.ok) return;
       const data = await resp.json();
       renderHistoryRows(data.runs || []);
-    } catch (err) {
-      console.warn("History load skipped:", err);
-    }
+    } catch (_) {}
   }
 
   async function waitUntilBackendRefreshCompletes(prevUtc) {
@@ -796,8 +788,7 @@
         if (!st.is_refreshing && st.collected_at_utc && st.collected_at_utc !== prevUtc) {
           const latResp = await fetch(apiUrl("/api/latest"), { cache: "no-store" });
           if (latResp.ok) {
-            const fresh = await latResp.json();
-            renderAll(fresh);
+            renderAll(await latResp.json());
             await loadHistory();
             showToast("已自动静默更新至最新实盘数据");
           }
@@ -818,13 +809,10 @@
         const vResp = await fetch(apiUrl("/api/visit"), { method: "POST" });
         if (vResp.ok) {
           const v = await vResp.json();
-          if (v.is_refreshing) {
-            await waitUntilBackendRefreshCompletes(prevUtc);
-          }
+          if (v.is_refreshing) await waitUntilBackendRefreshCompletes(prevUtc);
         }
       } catch (_) {}
     } else if (STATE.mode === "static") {
-      // Re-pull latest static JSON bypassing CDN/browser cache when unlocking phone
       try {
         const resp = await fetch(`./data/latest_snapshot.json?_t=${Date.now()}`, { cache: "no-store" });
         if (resp.ok) {
@@ -840,43 +828,30 @@
   }
 
   async function detectAndLoadInitial() {
-    // 1. Try API mode first (either custom apiBase or same-origin /api/latest)
     try {
       const ctrl = new AbortController();
       const timer = setTimeout(() => ctrl.abort(), 3500);
       const resp = await fetch(apiUrl("/api/latest"), { cache: "no-store", signal: ctrl.signal });
       clearTimeout(timer);
-      if (resp.ok) {
-        const contentType = resp.headers.get("content-type") || "";
-        if (contentType.includes("application/json")) {
-          STATE.mode = "api";
-          const bundle = await resp.json();
-          renderAll(bundle);
-          await loadHistory();
-          document.getElementById("current-mode-badge").textContent =
-            "实时 Python 后端引擎 (支持访问即刻重算 + 智能调度)";
-          // Trigger non-blocking on-visit freshness revalidation
-          triggerOnVisitCheck();
-          return;
-        }
+      if (resp.ok && (resp.headers.get("content-type") || "").includes("application/json")) {
+        STATE.mode = "api";
+        renderAll(await resp.json());
+        await loadHistory();
+        document.getElementById("current-mode-badge").textContent = "实时 Python 后端引擎 (访问即刻重算)";
+        triggerOnVisitCheck();
+        return;
       }
-    } catch (_) {
-      // Fall through to static cloud mode
-    }
+    } catch (_) {}
 
-    // 2. Fallback to Static GitHub Pages PWA mode (./data/latest_snapshot.json)
     STATE.mode = "static";
-    document.getElementById("current-mode-badge").textContent =
-      "GitHub Pages 云端模式 (由 GitHub Actions 按周期与关键节点自动更新)";
+    document.getElementById("current-mode-badge").textContent = "GitHub Pages 云端模式 (Actions 自动更新)";
     const resp = await fetch(`./data/latest_snapshot.json?_t=${Date.now()}`, { cache: "no-store" });
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    const bundle = await resp.json();
-    renderAll(bundle);
+    renderAll(await resp.json());
     await loadHistory();
   }
 
   function bindUiEvents() {
-    // Refresh button
     const btn = document.getElementById("btn-refresh-live");
     const label = document.getElementById("btn-refresh-label");
     btn.addEventListener("click", async () => {
@@ -887,17 +862,15 @@
         if (STATE.mode === "api") {
           const resp = await fetch(apiUrl("/api/refresh"), { method: "POST" });
           if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-          const bundle = await resp.json();
-          renderAll(bundle);
+          renderAll(await resp.json());
           await loadHistory();
-          showToast("已完成全量实盘数据重算");
+          showToast("已完成全量实盘重算并更新结论");
         } else {
           const resp = await fetch(`./data/latest_snapshot.json?_t=${Date.now()}`, { cache: "no-store" });
           if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-          const bundle = await resp.json();
-          renderAll(bundle);
+          renderAll(await resp.json());
           await loadHistory();
-          showToast("已拉取云端最新巡检快照（如需秒级实时重算可在设置中绑定Python后端）");
+          showToast("已同步云端最新巡检快照");
         }
       } catch (err) {
         showToast("刷新失败: " + err.message);
@@ -908,7 +881,6 @@
       }
     });
 
-    // Desktop nav active highlight
     const navLinks = document.querySelectorAll(".nav-link");
     navLinks.forEach((lnk) => {
       lnk.addEventListener("click", () => {
@@ -917,7 +889,6 @@
       });
     });
 
-    // Mobile bottom tab bar switching
     const mobTabs = document.querySelectorAll(".mob-tab");
     mobTabs.forEach((tab) => {
       tab.addEventListener("click", () => {
@@ -929,29 +900,22 @@
       });
     });
 
-    // Settings modal
     const modal = document.getElementById("settings-modal");
     const inputApi = document.getElementById("input-api-base");
     document.getElementById("btn-open-settings").addEventListener("click", () => {
       inputApi.value = STATE.apiBase;
       modal.classList.add("open");
     });
-    document.getElementById("btn-close-settings").addEventListener("click", () => {
-      modal.classList.remove("open");
-    });
+    document.getElementById("btn-close-settings").addEventListener("click", () => modal.classList.remove("open"));
     modal.addEventListener("click", (e) => {
       if (e.target === modal) modal.classList.remove("open");
     });
     document.getElementById("btn-save-settings").addEventListener("click", async () => {
       const val = inputApi.value.trim().replace(/\/+$/, "");
       STATE.apiBase = val;
-      if (val) {
-        localStorage.setItem("sentinel_api_base", val);
-      } else {
-        localStorage.removeItem("sentinel_api_base");
-      }
+      if (val) localStorage.setItem("sentinel_api_base", val);
+      else localStorage.removeItem("sentinel_api_base");
       modal.classList.remove("open");
-      showToast("正在重新探测数据源...");
       try {
         await detectAndLoadInitial();
       } catch (err) {
@@ -959,7 +923,6 @@
       }
     });
 
-    // Auto-revalidate when user unlocks phone or switches back to tab
     document.addEventListener("visibilitychange", () => {
       if (document.visibilityState === "visible") {
         updateFreshnessBadge();
@@ -967,7 +930,6 @@
       }
     });
 
-    // Keep relative timestamp fresh & poll lightweight backend status every 45s
     window.setInterval(async () => {
       updateFreshnessBadge();
       if (STATE.mode === "api" && document.visibilityState === "visible") {

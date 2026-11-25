@@ -1,5 +1,5 @@
 /* Henren Market Sentinel — Network-First PWA Service Worker */
-const CACHE_NAME = "henren-sentinel-v2";
+const CACHE_NAME = "henren-sentinel-v3";
 const SHELL_ASSETS = [
   "./",
   "./index.html",
