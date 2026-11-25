@@ -16,16 +16,14 @@ on:
     - cron: "0 2,6,10 * * 1-5"
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
 concurrency:
-  group: "pages-market-sentinel"
+  group: "gh-pages-market-sentinel"
   cancel-in-progress: false
 
 jobs:
-  build:
+  collect-and-publish:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -53,26 +51,13 @@ jobs:
           if [ "$TRIG" = "schedule" ]; then TRIG="smart_cron"; fi
           python3 cli.py --trigger "$TRIG" --seed-history /tmp/prev_history.json --export-static-site dist
 
-      - name: Configure GitHub Pages
-        uses: actions/configure-pages@v6
-        with:
-          enablement: true
-
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v5
-        with:
-          path: ./dist
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Allow GitHub Artifact index propagation
-        run: sleep 5
-
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v5
+      - name: Publish dist directly to gh-pages branch
+        env:
+          GH_PAT: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git -C dist init -b gh-pages
+          git -C dist config user.name "github-actions[bot]"
+          git -C dist config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git -C dist add -A
+          git -C dist commit -m "chore(pages): live market snapshot $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          git -C dist push --force "https://x-access-token:${GH_PAT}@github.com/${{ github.repository }}.git" gh-pages:gh-pages
