@@ -72,6 +72,66 @@ body::before {
   padding: 0 24px 72px;
 }
 
+.hidden {
+  display: none !important;
+}
+
+/* Degraded / Stale Snapshot Alert Banner */
+.degraded-banner {
+  display: none;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 14px;
+  margin-top: 10px;
+  border-radius: var(--radius-sm);
+  background: hsla(34, 86%, 56%, 0.14);
+  border: 1px solid hsla(34, 86%, 56%, 0.42);
+  color: hsl(34, 95%, 78%);
+  font-size: 0.81rem;
+  font-family: var(--font-mono);
+}
+
+.degraded-banner.active {
+  display: flex;
+}
+
+.degraded-banner.mode-grey {
+  background: hsla(220, 14%, 20%, 0.72);
+  border-color: var(--border-strong);
+  color: var(--text-secondary);
+}
+
+.degraded-banner-main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.degraded-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 0.73rem;
+  background: hsla(34, 86%, 56%, 0.25);
+  color: hsl(34, 96%, 82%);
+}
+
+.degraded-banner.mode-grey .degraded-tag {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  border: 1px solid var(--border-strong);
+}
+
+.btn-compact {
+  padding: 4px 10px;
+  font-size: 0.77rem;
+}
+
 /* Silent Sync Banner */
 .sync-banner {
   display: none;
@@ -126,7 +186,7 @@ body::before {
 .brand-group {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
 }
 
 .brand-group h1 {
@@ -141,21 +201,58 @@ body::before {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
-  font-size: 0.79rem;
+  gap: 6px;
+  font-size: 0.74rem;
   color: var(--text-muted);
   font-family: var(--font-mono);
 }
 
-.freshness-badge {
+.mod-ts-pill {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 1px 7px;
+  padding: 2px 7px;
   border-radius: 4px;
   background: var(--bg-elevated);
   color: var(--text-secondary);
   border: 1px solid var(--border-hairline);
+  white-space: nowrap;
+}
+
+.mod-ts-pill strong {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.mod-ts-pill.stale {
+  border-color: hsla(34, 86%, 56%, 0.45);
+  background: hsla(34, 86%, 56%, 0.12);
+}
+
+.mod-ts-pill.stale strong {
+  color: hsl(34, 92%, 74%);
+}
+
+.mod-ts-label {
+  color: var(--text-muted);
+}
+
+.degraded-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.73rem;
+  font-weight: 600;
+  background: hsla(34, 86%, 56%, 0.22);
+  color: hsl(34, 95%, 76%);
+  border: 1px solid hsla(34, 86%, 56%, 0.45);
+}
+
+.degraded-badge.grey {
+  background: hsla(220, 14%, 22%, 0.8);
+  color: var(--text-secondary);
+  border-color: var(--border-strong);
 }
 
 .status-dot {
@@ -163,6 +260,10 @@ body::before {
   height: 7px;
   border-radius: 50%;
   background: var(--signal-ok);
+}
+
+.status-dot.stale {
+  background: var(--signal-warn);
 }
 
 .status-dot.syncing {
@@ -618,7 +719,38 @@ body::before {
   gap: 16px;
 }
 
-/* Interactive Gamma Sandbox */
+/* Hysteresis Probing Badge & Scenario Active Preview Bar */
+.tag-probing {
+  background: hsla(199, 72%, 56%, 0.16);
+  color: hsl(199, 86%, 76%);
+  border: 1px dashed hsla(199, 72%, 56%, 0.48);
+}
+
+.scenario-active-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 14px;
+  margin-bottom: 12px;
+  border-radius: var(--radius-sm);
+  background: hsla(41, 70%, 57%, 0.14);
+  border: 1px solid hsla(41, 70%, 57%, 0.42);
+  color: hsl(41, 88%, 78%);
+  font-size: 0.82rem;
+  font-family: var(--font-mono);
+}
+
+.consequence-card.is-scenario-preview {
+  border-color: hsla(41, 70%, 57%, 0.38);
+}
+
+.consequence-card.in-hysteresis-buffer {
+  border-color: hsla(199, 72%, 56%, 0.35);
+}
+
+/* Interactive Gamma Sandbox & Presets */
 .sandbox-panel {
   margin-top: 14px;
   padding-top: 14px;
@@ -632,6 +764,39 @@ body::before {
   justify-content: space-between;
   gap: 10px;
   margin-bottom: 8px;
+}
+
+.sandbox-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 9px;
+}
+
+.preset-chip {
+  appearance: none;
+  padding: 5px 10px;
+  border-radius: 5px;
+  border: 1px solid var(--border-strong);
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+  font-family: var(--font-sans);
+  font-size: 0.77rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.preset-chip:hover {
+  background: hsl(220, 13%, 17%);
+  color: var(--text-primary);
+}
+
+.preset-chip.active {
+  background: var(--accent-gold-soft);
+  color: hsl(41, 88%, 75%);
+  border-color: hsla(41, 70%, 57%, 0.5);
+  font-weight: 600;
 }
 
 .sandbox-range {
@@ -650,6 +815,110 @@ body::before {
   font-size: 0.84rem;
   color: var(--text-secondary);
   line-height: 1.56;
+}
+
+.assumption-footnote {
+  margin-top: 9px;
+  padding: 7px 10px;
+  border-radius: 4px;
+  background: hsla(220, 14%, 14%, 0.55);
+  border-left: 2px solid var(--border-strong);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+/* Daily Plumbing MOVE Leading Card */
+.move-plumbing-card {
+  display: grid;
+  grid-template-columns: 1.35fr 1fr 200px;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 18px;
+}
+
+.move-plumbing-desc {
+  margin: 5px 0 0;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.move-plumbing-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.move-stat-item {
+  padding: 7px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-hairline);
+}
+
+.move-stat-label {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.move-stat-val {
+  margin-top: 2px;
+  font-family: var(--font-mono);
+  font-size: 1.02rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.move-spark-wrap {
+  width: 100%;
+  min-height: 48px;
+}
+
+/* Historical Batch Log State-Transition Highlights */
+.data-table tr.row-transition td {
+  background: hsla(41, 70%, 57%, 0.065);
+}
+
+.data-table tr.row-transition td:first-child {
+  box-shadow: inset 3px 0 0 var(--accent-gold);
+}
+
+.transition-cell {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.transition-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.71rem;
+  font-weight: 500;
+  background: var(--accent-gold-soft);
+  color: hsl(41, 88%, 74%);
+  border: 1px solid hsla(41, 70%, 57%, 0.35);
+}
+
+.transition-badge.jump-up {
+  background: var(--signal-danger-soft);
+  color: hsl(4, 85%, 75%);
+  border-color: hsla(4, 74%, 58%, 0.35);
+}
+
+.transition-badge.jump-down {
+  background: var(--signal-ok-soft);
+  color: hsl(154, 68%, 70%);
+  border-color: hsla(154, 56%, 48%, 0.35);
+}
+
+.transition-steady {
+  font-family: var(--font-mono);
+  font-size: 0.73rem;
+  color: var(--text-muted);
 }
 
 /* Explicit Divider Separating Top Live Zone vs Bottom Supplementary Zone */
@@ -858,7 +1127,8 @@ body::before {
   .two-col,
   .two-col-equal,
   .consequence-grid,
-  .static-manual-body {
+  .static-manual-body,
+  .move-plumbing-card {
     grid-template-columns: 1fr;
   }
   .kpi-strip {

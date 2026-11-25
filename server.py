@@ -30,6 +30,9 @@ REFRESH_LOCK = threading.Lock()
 IS_REFRESHING = False
 
 
+LAST_REFRESH_ERROR: str | None = None
+
+
 def _parse_iso_utc(ts_str: str | None) -> datetime | None:
     if not ts_str:
         return None
@@ -49,11 +52,22 @@ def _snapshot_age_seconds(data: dict[str, Any] | None) -> float:
 
 
 def _safe_refresh(trigger_source: str = "manual") -> dict[str, Any]:
-    global IS_REFRESHING
+    global IS_REFRESHING, LAST_REFRESH_ERROR
     with REFRESH_LOCK:
         IS_REFRESHING = True
         try:
-            return execute_market_check(trigger_source=trigger_source)
+            res = execute_market_check(trigger_source=trigger_source)
+            LAST_REFRESH_ERROR = None
+            return res
+        except Exception as exc:
+            LAST_REFRESH_ERROR = str(exc)
+            logger.warning("Upstream refresh failed (%s), falling back to cached snapshot: %s", trigger_source, exc)
+            cached = load_latest_run()
+            if cached is not None:
+                cached["fallback_cached"] = True
+                cached["fallback_reason"] = str(exc)
+                return cached
+            raise
         finally:
             IS_REFRESHING = False
 
@@ -115,11 +129,15 @@ def api_status() -> dict[str, Any]:
     latest = load_latest_run()
     plan = compute_smart_schedule_plan()
     age = _snapshot_age_seconds(latest)
+    snap = latest.get("snapshot", {}) if latest else {}
     return {
         "ok": True,
         "is_refreshing": IS_REFRESHING,
+        "fallback_cached": bool(LAST_REFRESH_ERROR),
+        "fallback_reason": LAST_REFRESH_ERROR,
         "run_id": latest.get("run_id") if latest else None,
-        "collected_at_utc": latest.get("snapshot", {}).get("collected_at_utc") if latest else None,
+        "collected_at_utc": snap.get("collected_at_utc"),
+        "module_timestamps": snap.get("module_timestamps"),
         "age_seconds": round(age, 1) if age < 1e8 else None,
         "is_stale_for_visit": bool(age >= plan["visit_stale_seconds"]),
         "scheduler": plan,
@@ -153,6 +171,8 @@ def api_latest() -> dict[str, Any]:
     data["scheduler"] = plan
     data["age_seconds"] = round(_snapshot_age_seconds(data), 1)
     data["is_refreshing"] = IS_REFRESHING
+    data["fallback_cached"] = bool(LAST_REFRESH_ERROR)
+    data["fallback_reason"] = LAST_REFRESH_ERROR
     return data
 
 
@@ -165,7 +185,7 @@ def api_history() -> dict[str, Any]:
 async def api_refresh() -> dict[str, Any]:
     bundle = await asyncio.to_thread(_safe_refresh, "manual")
     bundle["scheduler"] = compute_smart_schedule_plan()
-    bundle["age_seconds"] = 0.0
+    bundle["age_seconds"] = round(_snapshot_age_seconds(bundle), 1)
     bundle["is_refreshing"] = False
     return bundle
 

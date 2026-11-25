@@ -21,14 +21,22 @@
         <img src="./icons/icon-192.png" alt="狠人风向台图标" class="brand-icon" />
         <div class="brand-group">
           <h1>狠人框架 · 全球市场风向台</h1>
-          <div class="brand-meta">
-            <span class="freshness-badge">
+          <div class="brand-meta" id="module-freshness-bar">
+            <span class="mod-ts-pill" id="mod-ts-quotes" title="盘中秒级直连或最近5分钟K线时间">
               <span id="live-status-dot" class="status-dot"></span>
-              <span id="meta-freshness-rel">加载中...</span>
+              <span class="mod-ts-label">盘中行情</span>
+              <strong id="meta-ts-quotes">加载中...</strong>
             </span>
-            <span id="meta-updated-at" class="hide-mobile">--</span>
-            <span class="meta-sep hide-mobile">|</span>
-            <span id="meta-schedule-info">--</span>
+            <span class="mod-ts-pill" id="mod-ts-options" title="QQQ 0-45 DTE 期权链解算时间">
+              <span class="mod-ts-label">期权链</span>
+              <strong id="meta-ts-options">--</strong>
+            </span>
+            <span class="mod-ts-pill" id="mod-ts-fred" title="FRED 回购利率与信用利差更新时间">
+              <span class="mod-ts-label">FRED日频</span>
+              <strong id="meta-ts-fred">--</strong>
+            </span>
+            <span id="meta-degraded-badge" class="degraded-badge hidden">当前为缓存快照</span>
+            <span id="meta-schedule-info" class="hide-mobile">--</span>
           </div>
         </div>
       </div>
@@ -46,6 +54,14 @@
         </button>
       </div>
     </header>
+
+    <div id="degraded-alert-banner" class="degraded-banner" role="alert">
+      <div class="degraded-banner-main">
+        <span class="degraded-tag" id="degraded-banner-tag">当前为缓存快照</span>
+        <span id="degraded-banner-text">盘中行情延迟超过 5 分钟或已回退至静态快照，请勿将旧数据当作实时成交价。</span>
+      </div>
+      <button id="btn-retry-degraded" class="btn btn-compact" type="button">立即重连刷新</button>
+    </div>
 
     <div id="sync-banner" class="sync-banner" role="status">
       <span id="sync-banner-text">检测到你主动打开看板，正在后台拉取最新实盘数据...</span>
@@ -99,9 +115,13 @@
           <div class="section-header">
             <div class="section-title-wrap">
               <h2>实时数据 &rarr; 触发后果 &rarr; 当下操作结论</h2>
-              <span class="freq-badge freq-live">核心研判区</span>
+              <span class="freq-badge freq-live" id="consequence-zone-badge">核心研判区</span>
             </div>
             <span class="section-subtitle">剔除静态背景，直接展示当前最新读数引发的市场连锁反应与应对动作</span>
+          </div>
+          <div id="scenario-active-bar" class="scenario-active-bar hidden" role="status">
+            <span id="scenario-active-label">【沙盘推演预览模式】当前结论区正在展示假设情景联动后果（非实盘成交状态）</span>
+            <button type="button" class="btn btn-compact" id="btn-exit-scenario">↺ 恢复实盘结论</button>
           </div>
           <div class="consequence-grid" id="consequence-grid"></div>
         </div>
@@ -114,7 +134,7 @@
             <h2>盘中实时：纳指期权防线图、黄金走势与分层报价矩阵</h2>
             <span class="freq-badge freq-live">盘中分钟级</span>
           </div>
-          <span class="section-subtitle">Yahoo Finance 实时行情 + QQQ 多到期日期权链 Black-Scholes 动态解算</span>
+          <span class="section-subtitle">Yahoo Finance 实时行情 + QQQ 0–45 DTE 清洗期权链 Black-Scholes 动态解算</span>
         </div>
 
         <div class="two-col">
@@ -129,16 +149,24 @@
               <span class="legend-item"><span class="legend-swatch" style="background: var(--signal-danger);"></span>Put OI 看跌防线</span>
               <span class="legend-item"><span class="legend-swatch" style="background: var(--signal-ok);"></span>Call OI 看涨阻力</span>
               <span class="legend-item"><span class="legend-swatch" style="background: var(--accent-gold);"></span>实时现价</span>
-              <span class="legend-item"><span class="legend-swatch" style="background: var(--series-cyan);"></span>Zero-Gamma 翻转线</span>
+              <span class="legend-item"><span class="legend-swatch" style="background: var(--series-cyan);"></span>Zero-Gamma 翻转线 (±0.75%缓冲)</span>
             </div>
 
             <div class="sandbox-panel" id="gamma-sandbox-panel">
               <div class="sandbox-slider-row">
-                <span style="font-weight:600; font-size:0.86rem;">实时点位推演沙盘（拖动模拟破位/突破后果）</span>
+                <span style="font-weight:600; font-size:0.86rem;">实时点位与高频情景推演沙盘（点击预设将联动上方结论区）</span>
                 <span id="sandbox-readout" class="gold-txt" style="font-family:var(--font-mono); font-weight:600;">--</span>
+              </div>
+              <div class="sandbox-presets" id="sandbox-presets">
+                <button type="button" class="preset-chip active" data-preset="live">↺ 实盘当前</button>
+                <button type="button" class="preset-chip" data-preset="break_zero_gamma">跌破 Zero-Gamma</button>
+                <button type="button" class="preset-chip" data-preset="break_put_wall">跌穿厚 Put 防线</button>
+                <button type="button" class="preset-chip" data-preset="repo_gold_discount">回购破走廊 + 黄金打折</button>
+                <button type="button" class="preset-chip" data-preset="ai_credit_crack">二线算力债领跌</button>
               </div>
               <input id="sandbox-slider" class="sandbox-range" type="range" min="23500" max="29000" step="20" value="26214" />
               <div id="sandbox-verdict-box" class="sandbox-output"></div>
+              <div id="options-assumption-note" class="assumption-footnote"></div>
             </div>
           </div>
 
@@ -214,35 +242,49 @@
         </div>
       </section>
 
-      <!-- 3. DAILY PLUMBING & CREDIT SPREADS -->
+      <!-- 3. DAILY PLUMBING, MOVE VOLATILITY & CREDIT SPREADS -->
       <section id="sec-live-plumbing" class="section-block mobile-pane" data-pane="plumbing">
         <div class="section-header">
           <div class="section-title-wrap">
-            <h2>日频监控：SOFR−IORB 回购走廊与信用爆破梯度</h2>
-            <span class="freq-badge freq-daily">FRED 每个交易日更新</span>
+            <h2>日频监控：MOVE 美债波动率前置预警、SOFR−IORB 走廊与信用爆破梯度</h2>
+            <span class="freq-badge freq-daily">FRED + MOVE 日更</span>
           </div>
-          <span class="section-subtitle">直接监测隔夜资金是否越界、底层垃圾债是否向投资级传染</span>
+          <span class="section-subtitle">MOVE 领先捕捉美债做市商抽紧信号，SOFR−IORB 设连续2日滞回确认防毛刺误报</span>
         </div>
 
-        <div class="two-col">
+        <div class="panel move-plumbing-card" id="plumbing-move-card">
+          <div class="move-plumbing-left">
+            <div class="section-title-wrap">
+              <strong>MOVE 指数（美债波动率 · 联储修管道前置预警）</strong>
+              <span class="tag" id="move-plumbing-badge">--</span>
+            </div>
+            <p class="move-plumbing-desc">
+              美债一级交易商资产负债表抽紧时，MOVE 通常比隔夜回购利率（SOFR）更早异动，可作为「联储被迫介入修管道」的前置领先指标。
+            </p>
+          </div>
+          <div class="move-plumbing-stats" id="move-plumbing-stats"></div>
+          <div class="move-spark-wrap" id="chart-move-sparkline"></div>
+        </div>
+
+        <div class="two-col" style="margin-top: 14px;">
           <div class="panel">
             <div class="section-header">
-              <h2>SOFR − IORB 近60个交易日走廊利差柱状图</h2>
-              <span class="section-subtitle">大于 0 bps 代表隔夜资金成本突破准备金利率上限</span>
+              <h2>SOFR − IORB 近60日走廊利差（含2日滞回确认）</h2>
+              <span class="section-subtitle" id="sofr-corridor-subtitle">单日轻微 &gt;0 bps 记黄灯观察，连续 ≥2 日越界升级红灯</span>
             </div>
             <div class="chart-box" id="chart-sofr-spread"></div>
           </div>
 
           <div class="panel">
             <div class="section-header">
-              <h2>资金成本与信用分层表（CCC vs HY vs IG）</h2>
-              <span class="section-subtitle">按风险等级从底层烂债向核心国债排列</span>
+              <h2>水管波动与信用分层表（MOVE / CCC / HY / IG）</h2>
+              <span class="section-subtitle">按前置波动与风险等级从底层烂债向核心国债排列</span>
             </div>
             <div class="table-wrap">
               <table class="data-table" id="credit-tier-table">
                 <thead>
                   <tr>
-                    <th>利率 / 信用层级指标</th>
+                    <th>前置波动 / 信用层级指标</th>
                     <th class="num">最新值</th>
                     <th class="num">20日变化</th>
                     <th class="num">1年分位</th>
@@ -334,10 +376,10 @@
                   <tr>
                     <th>批次 / 触发源</th>
                     <th>抓取时间</th>
-                    <th class="num">风险分</th>
+                    <th>状态切换 / 异动标记</th>
+                    <th class="num">风险分 (Δ)</th>
                     <th class="num">黄金分</th>
-                    <th class="num">纳指</th>
-                    <th class="num">黄金</th>
+                    <th class="num">纳指 / 黄金</th>
                   </tr>
                 </thead>
                 <tbody id="history-tbody"></tbody>

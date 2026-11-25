@@ -7,6 +7,7 @@ import io
 import logging
 from datetime import date, datetime, timedelta, timezone
 from typing import Any
+from zoneinfo import ZoneInfo
 
 import numpy as np
 import pandas as pd
@@ -15,6 +16,7 @@ import yfinance as yf
 from scipy.stats import norm
 
 logger = logging.getLogger(__name__)
+ET_TZ = ZoneInfo("America/New_York")
 
 FRED_SERIES: dict[str, dict[str, str]] = {
     # Dollar Plumbing
@@ -167,12 +169,40 @@ def collect_fred_data() -> dict[str, Any]:
             ],
         }
 
-    # Derived SOFR - IORB spread (in bps)
+    # Derived SOFR - IORB spread (in bps) + Hysteresis persistence counters
     if "SOFR" in raw_series and "IORB" in raw_series:
-        df_sp = pd.DataFrame({"sofr": raw_series["SOFR"], "iorb": raw_series["IORB"]}).sort_index().ffill().dropna()
+        sofr_s = raw_series["SOFR"].dropna().sort_index()
+        iorb_aligned = (
+            raw_series["IORB"]
+            .reindex(sofr_s.index.union(raw_series["IORB"].index))
+            .sort_index()
+            .ffill()
+            .reindex(sofr_s.index)
+        )
+        df_sp = pd.DataFrame({"sofr": sofr_s, "iorb": iorb_aligned}).dropna()
         df_sp["spread_bps"] = (df_sp["sofr"] - df_sp["iorb"]) * 100.0
+        sp_vals = df_sp["spread_bps"].tolist()
+
+        consec_above_zero = 0
+        for v in reversed(sp_vals):
+            if v > 0.0:
+                consec_above_zero += 1
+            else:
+                break
+
+        consec_above_5bps = 0
+        for v in reversed(sp_vals):
+            if v >= 5.0:
+                consec_above_5bps += 1
+            else:
+                break
+
+        prev_sp_bps = round(float(sp_vals[-2]), 2) if len(sp_vals) >= 2 else round(float(sp_vals[-1]), 2)
         derived["sofr_iorb_spread"] = {
-            "value_bps": round(float(df_sp["spread_bps"].iloc[-1]), 2),
+            "value_bps": round(float(sp_vals[-1]), 2),
+            "prev_value_bps": prev_sp_bps,
+            "consecutive_days_above_zero": consec_above_zero,
+            "consecutive_days_above_5bps": consec_above_5bps,
             "sofr": round(float(df_sp["sofr"].iloc[-1]), 3),
             "iorb": round(float(df_sp["iorb"].iloc[-1]), 3),
             "date": str(df_sp.index[-1].date()),
@@ -183,7 +213,19 @@ def collect_fred_data() -> dict[str, Any]:
             ],
         }
 
-    return {"metrics": metrics, "derived": derived}
+    daily_dates = [
+        metrics[k]["date"]
+        for k in ("SOFR", "DGS10", "BAMLH0A3HYCEY")
+        if k in metrics and metrics[k].get("date")
+    ]
+    latest_obs_date = max(daily_dates) if daily_dates else None
+    updated_at_utc = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    return {
+        "metrics": metrics,
+        "derived": derived,
+        "updated_at_utc": updated_at_utc,
+        "latest_obs_date": latest_obs_date,
+    }
 
 
 def _compute_rsi(series: pd.Series, period: int = 14) -> float | None:
@@ -213,15 +255,25 @@ def collect_market_quotes() -> dict[str, Any]:
             else:
                 closes = pd.Series(dtype=float)
 
+            last_bar_utc: str | None = None
+            recent_30m_closes: list[float] = []
+
             # Always overlay latest 5-minute real-time intraday bar onto its trading date
             try:
                 m5 = tk.history(period="2d", interval="5m", auto_adjust=False)
                 if not m5.empty and "Close" in m5 and not m5["Close"].dropna().empty:
                     c5 = m5["Close"].dropna()
                     latest_ts = c5.index[-1]
-                    latest_day = latest_ts.tz_localize(None).normalize() if getattr(latest_ts, "tzinfo", None) else pd.Timestamp(latest_ts).normalize()
+                    if getattr(latest_ts, "tzinfo", None):
+                        last_bar_utc = latest_ts.tz_convert("UTC").strftime("%Y-%m-%dT%H:%M:%SZ")
+                        latest_day = latest_ts.tz_localize(None).normalize()
+                    else:
+                        last_bar_utc = pd.Timestamp(latest_ts, tz="UTC").strftime("%Y-%m-%dT%H:%M:%SZ")
+                        latest_day = pd.Timestamp(latest_ts).normalize()
                     closes.loc[latest_day] = float(c5.iloc[-1])
                     closes = closes.sort_index()
+                    if sym in ("QQQ", "^NDX"):
+                        recent_30m_closes = [round(float(v), 2) for v in c5.tail(6).tolist()]
             except Exception:
                 pass
 
@@ -246,9 +298,12 @@ def collect_market_quotes() -> dict[str, Any]:
                 "category": meta["category"],
                 "price": round(latest, 2 if latest >= 10 else 4),
                 "date": latest_dt,
+                "last_bar_utc": last_bar_utc,
                 "ret_1d_pct": round((latest / prev_1 - 1.0) * 100.0, 2) if prev_1 else 0.0,
                 "ret_5d_pct": round((latest / prev_5 - 1.0) * 100.0, 2) if prev_5 else 0.0,
                 "ret_20d_pct": round((latest / prev_20 - 1.0) * 100.0, 2) if prev_20 else 0.0,
+                "chg_5_abs": round(latest - prev_5, 2),
+                "chg_20_abs": round(latest - prev_20, 2),
                 "drawdown_52w_pct": round((latest / high_52w - 1.0) * 100.0, 2) if high_52w else 0.0,
                 "high_52w": round(high_52w, 2),
                 "low_52w": round(low_52w, 2),
@@ -262,6 +317,8 @@ def collect_market_quotes() -> dict[str, Any]:
                     for dt, v in closes.tail(60).items()
                 ],
             }
+            if recent_30m_closes:
+                item["recent_30m_closes"] = recent_30m_closes
             if "ipo_price" in meta:
                 ipo_px = float(meta["ipo_price"])
                 item["ipo_price"] = ipo_px
@@ -274,59 +331,142 @@ def collect_market_quotes() -> dict[str, Any]:
 
 
 def _bs_gamma(S: np.ndarray | float, K: np.ndarray, T: np.ndarray, r: float, sigma: np.ndarray) -> np.ndarray:
-    """Vectorized Black-Scholes Gamma."""
-    sigma_safe = np.clip(sigma, 0.05, 3.0)
+    """Vectorized Black-Scholes Gamma (inputs already scrubbed for invalid IV)."""
+    sigma_safe = np.clip(sigma, 0.02, 3.0)
     T_safe = np.clip(T, 1.0 / 365.25, 5.0)
     sqrtT = np.sqrt(T_safe)
     d1 = (np.log(S / K) + (r + 0.5 * sigma_safe**2) * T_safe) / (sigma_safe * sqrtT)
     return norm.pdf(d1) / (S * sigma_safe * sqrtT)
 
 
-def collect_options_microstructure(qqq_spot: float, ndx_spot: float, risk_free_rate: float = 0.045) -> dict[str, Any]:
-    """Compute live QQQ -> NDX mapped Put Walls, Call Walls, and Dealer Gamma Exposure (GEX)."""
+def collect_options_microstructure(
+    qqq_spot: float,
+    ndx_spot: float,
+    risk_free_rate: float = 0.045,
+    qqq_recent_30m_closes: list[float] | None = None,
+) -> dict[str, Any]:
+    """Compute cleaned 0-45 DTE QQQ -> NDX Put/Call Walls, weighted Zero-Gamma, and Hysteresis state."""
     try:
         tk = yf.Ticker("QQQ")
         all_exps = list(tk.options)
         if not all_exps:
             return {"available": False}
 
-        # Pick nearest 5 expirations + monthly OPEX (3rd Friday) & month/year-end within 45 days
-        today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-        cutoff_str = (datetime.now(timezone.utc) + timedelta(days=45)).strftime("%Y-%m-%d")
-        near_exps = [e for e in all_exps if e >= today_str][:5]
-        structural_exps = [
-            e for e in all_exps
-            if today_str <= e <= cutoff_str and (e.endswith("-18") or e.endswith("-19") or e.endswith("-30") or e.endswith("-31"))
-        ]
-        selected_exps = sorted(set(near_exps + structural_exps))[:8]
-
         now_utc = datetime.now(timezone.utc)
+        now_et = now_utc.astimezone(ET_TZ)
+        today_et = now_et.date()
+        post_close_0dte = (now_et.hour, now_et.minute) >= (16, 15)
+
+        # Strictly restrict to near-month 0-45 DTE contracts (skip settled 0DTE after 16:15 ET)
+        dte_candidates: list[tuple[str, int]] = []
+        for exp in all_exps:
+            try:
+                exp_d = date.fromisoformat(exp)
+            except ValueError:
+                continue
+            dte = (exp_d - today_et).days
+            if dte < 0 or dte > 45:
+                continue
+            if dte == 0 and post_close_0dte:
+                continue
+            dte_candidates.append((exp, dte))
+
+        if not dte_candidates:
+            return {"available": False, "error": "No valid 0-45 DTE expirations"}
+
+        # Prioritize nearest 6 expirations + structural OPEX / month-end within 0-45 DTE (max 10 chains)
+        near_set = {e for e, _ in dte_candidates[:6]}
+        struct_set = {
+            e for e, _ in dte_candidates
+            if e.endswith(("-15", "-16", "-17", "-18", "-19", "-20", "-21", "-29", "-30", "-31"))
+        }
+        chosen_set = near_set | struct_set
+        selected_pairs = [(e, d) for e, d in dte_candidates if e in chosen_set][:10]
+        selected_exps = [e for e, _ in selected_pairs]
+
         ratio = ndx_spot / qqq_spot if qqq_spot > 0 else 41.08
         rows: list[pd.DataFrame] = []
 
-        for exp in selected_exps:
+        raw_contracts = 0
+        dropped_low_oi = 0
+        dropped_bad_quote = 0
+        dropped_bad_iv = 0
+        used_weekend_fallback = False
+
+        k_lo = qqq_spot * 0.84
+        k_hi = qqq_spot * 1.14
+
+        for exp, dte_days in selected_pairs:
             ch = tk.option_chain(exp)
             exp_dt = pd.Timestamp(exp, tz="UTC") + pd.Timedelta(hours=21)
             T = max((exp_dt - now_utc).total_seconds() / (365.25 * 86400.0), 1.0 / 365.25)
+            # Near-month liquidity weighting: 0-21 DTE = 1.0, 22-35 DTE = 0.85, 36-45 DTE = 0.70
+            dte_weight = 1.0 if dte_days <= 21 else (0.85 if dte_days <= 35 else 0.70)
+
             for opt_type, df in (("call", ch.calls), ("put", ch.puts)):
                 if df is None or df.empty:
                     continue
-                sub = df[["strike", "openInterest", "impliedVolatility"]].copy()
+                cols_needed = ["strike", "openInterest", "impliedVolatility"]
+                for extra_col in ("bid", "ask", "lastPrice"):
+                    if extra_col in df.columns:
+                        cols_needed.append(extra_col)
+                sub = df[cols_needed].copy()
+                sub["strike"] = pd.to_numeric(sub["strike"], errors="coerce")
+                sub = sub[(sub["strike"] >= k_lo) & (sub["strike"] <= k_hi)].copy()
+                if sub.empty:
+                    continue
+
+                raw_contracts += len(sub)
                 sub["openInterest"] = pd.to_numeric(sub["openInterest"], errors="coerce").fillna(0.0)
-                sub["impliedVolatility"] = pd.to_numeric(sub["impliedVolatility"], errors="coerce").fillna(0.25)
-                sub.loc[sub["impliedVolatility"] <= 0.01, "impliedVolatility"] = 0.25
+                sub["impliedVolatility"] = pd.to_numeric(sub["impliedVolatility"], errors="coerce").fillna(-1.0)
+                sub["bid"] = pd.to_numeric(sub.get("bid", 0.0), errors="coerce").fillna(0.0)
+                sub["ask"] = pd.to_numeric(sub.get("ask", 0.0), errors="coerce").fillna(0.0)
+                sub["lastPrice"] = pd.to_numeric(sub.get("lastPrice", 0.0), errors="coerce").fillna(0.0)
+
+                # Step 1: Dirty OI filter (drop OI < 100)
+                mask_oi = sub["openInterest"] >= 100
+                dropped_low_oi += int((~mask_oi).sum())
+                sub = sub[mask_oi].copy()
+                if sub.empty:
+                    continue
+
+                # Step 2: Dirty Bid/Ask spread filter (Bid > 0 and (Ask - Bid)/Mid <= 30%)
+                live_bid_ratio = float((sub["bid"] > 0).mean())
+                if live_bid_ratio >= 0.15:
+                    mid = (sub["ask"] + sub["bid"]) / 2.0
+                    rel_spread = np.where(mid > 0, (sub["ask"] - sub["bid"]) / mid, 999.0)
+                    mask_quote = (sub["bid"] > 0) & (sub["ask"] >= sub["bid"]) & (rel_spread <= 0.30)
+                else:
+                    # Weekend / OPRA off-hours fallback when Yahoo zeroes all bids
+                    used_weekend_fallback = True
+                    mask_quote = sub["lastPrice"] >= 0.05
+
+                dropped_bad_quote += int((~mask_quote).sum())
+                sub = sub[mask_quote].copy()
+                if sub.empty:
+                    continue
+
+                # Step 3: Abnormal IV filter (drop IV <= 0.5% or IV > 300%, NO synthetic IV fill)
+                mask_iv = (sub["impliedVolatility"] > 0.005) & (sub["impliedVolatility"] <= 3.0)
+                dropped_bad_iv += int((~mask_iv).sum())
+                sub = sub[mask_iv].copy()
+                if sub.empty:
+                    continue
+
                 sub["type"] = opt_type
                 sub["T"] = T
+                sub["dte"] = dte_days
+                sub["dte_weight"] = dte_weight
                 sub["exp"] = exp
                 rows.append(sub)
 
         if not rows:
-            return {"available": False}
+            return {"available": False, "error": "All option contracts filtered out"}
 
         opt = pd.concat(rows, ignore_index=True)
-        opt = opt[(opt["openInterest"] > 0) & (opt["strike"] >= qqq_spot * 0.84) & (opt["strike"] <= qqq_spot * 1.14)].copy()
+        kept_contracts = int(len(opt))
 
-        # Gamma at current spot (Dealer convention: +Call GEX, -Put GEX, $ per 1% spot move)
+        # Gamma at current spot (Dealer default convention: +Call GEX, -Put GEX, $ per 1% spot move)
         gammas = _bs_gamma(
             qqq_spot,
             opt["strike"].to_numpy(),
@@ -335,22 +475,23 @@ def collect_options_microstructure(qqq_spot: float, ndx_spot: float, risk_free_r
             opt["impliedVolatility"].to_numpy(),
         )
         sign = np.where(opt["type"] == "call", 1.0, -1.0)
-        # Dollar GEX per 1% move in QQQ ($M)
-        opt["gex_m"] = sign * gammas * opt["openInterest"] * 100.0 * (qqq_spot**2) * 0.01 / 1e6
+        weights = opt["dte_weight"].to_numpy()
+        opt["gex_m"] = sign * weights * gammas * opt["openInterest"] * 100.0 * (qqq_spot**2) * 0.01 / 1e6
 
         net_gex_m = float(opt["gex_m"].sum())
 
-        # Find Zero-Gamma Flip across spot grid [0.90 * spot, 1.10 * spot]
+        # Solve weighted 0-45 DTE Zero-Gamma Flip across spot grid [0.90 * spot, 1.10 * spot]
         grid_qqq = np.linspace(qqq_spot * 0.90, qqq_spot * 1.10, 81)
         K_arr = opt["strike"].to_numpy()[None, :]
         T_arr = opt["T"].to_numpy()[None, :]
         iv_arr = opt["impliedVolatility"].to_numpy()[None, :]
         oi_arr = opt["openInterest"].to_numpy()[None, :]
+        w_arr = weights[None, :]
         sign_arr = sign[None, :]
         S_arr = grid_qqq[:, None]
 
         grid_gammas = _bs_gamma(S_arr, K_arr, T_arr, risk_free_rate, iv_arr)
-        grid_gex = np.sum(sign_arr * grid_gammas * oi_arr * 100.0 * (S_arr**2) * 0.01 / 1e6, axis=1)
+        grid_gex = np.sum(sign_arr * w_arr * grid_gammas * oi_arr * 100.0 * (S_arr**2) * 0.01 / 1e6, axis=1)
 
         zero_gamma_qqq: float | None = None
         for i in range(len(grid_qqq) - 1):
@@ -360,39 +501,61 @@ def collect_options_microstructure(qqq_spot: float, ndx_spot: float, risk_free_r
                 zero_gamma_qqq = float(grid_qqq[i] + w * (grid_qqq[i + 1] - grid_qqq[i]))
                 break
         if zero_gamma_qqq is None:
-            # Nearest point to zero
             idx_min = int(np.argmin(np.abs(grid_gex)))
             zero_gamma_qqq = float(grid_qqq[idx_min])
 
-        zero_gamma_ndx = round(zero_gamma_qqq * ratio, 0)
+        zero_gamma_ndx = int(round(zero_gamma_qqq * ratio))
+
+        # Hysteresis Band (±0.75% spatial deadband + 30-min 6x5m bar persistence check)
+        band_pct = 0.0075
+        lower_band_qqq = zero_gamma_qqq * (1.0 - band_pct)
+        upper_band_qqq = zero_gamma_qqq * (1.0 + band_pct)
+        lower_band_ndx = int(round(lower_band_qqq * ratio))
+        upper_band_ndx = int(round(upper_band_qqq * ratio))
+        dist_to_flip_pct = round((qqq_spot / zero_gamma_qqq - 1.0) * 100.0, 2)
+
+        closes_30m = qqq_recent_30m_closes or []
+        held_30m_below = bool(len(closes_30m) >= 6 and all(c < zero_gamma_qqq for c in closes_30m))
+        held_30m_above = bool(len(closes_30m) >= 6 and all(c > zero_gamma_qqq for c in closes_30m))
+
+        if lower_band_qqq <= qqq_spot <= upper_band_qqq:
+            gamma_state = "BUFFER_PROBING"
+        elif qqq_spot < lower_band_qqq:
+            gamma_state = "NEGATIVE_CONFIRMED" if (held_30m_below or len(closes_30m) < 6) else "BUFFER_PROBING"
+        else:
+            gamma_state = "POSITIVE_CONFIRMED" if (held_30m_above or len(closes_30m) < 6) else "BUFFER_PROBING"
 
         # Aggregate OI & GEX by strike
         calls_by_k = opt[opt["type"] == "call"].groupby("strike")["openInterest"].sum()
         puts_by_k = opt[opt["type"] == "put"].groupby("strike")["openInterest"].sum()
         gex_by_k = opt.groupby("strike")["gex_m"].sum()
 
-        # Primary OTM Put Wall within [-8%, -0.2%] below spot (stays active right as spot tests it)
         otm_puts_main = puts_by_k[(puts_by_k.index <= qqq_spot * 0.998) & (puts_by_k.index >= qqq_spot * 0.92)].sort_values(ascending=False)
-        all_below_puts = puts_by_k[(puts_by_k.index <= qqq_spot * 0.998) & (puts_by_k.index >= qqq_spot * 0.88)].sort_values(ascending=False)
+        all_below_puts = puts_by_k[(puts_by_k.index <= qqq_spot * 0.998) & (puts_by_k.index >= qqq_spot * 0.86)].sort_values(ascending=False)
         otm_calls = calls_by_k[calls_by_k.index >= qqq_spot * 1.005].sort_values(ascending=False)
 
-        major_put_wall_qqq = float(otm_puts_main.index[0]) if not otm_puts_main.empty else float(all_below_puts.index[0])
-        major_put_wall_oi = int(otm_puts_main.iloc[0]) if not otm_puts_main.empty else int(all_below_puts.iloc[0])
+        if not otm_puts_main.empty:
+            major_put_wall_qqq = float(otm_puts_main.index[0])
+            major_put_wall_oi = int(otm_puts_main.iloc[0])
+        elif not all_below_puts.empty:
+            major_put_wall_qqq = float(all_below_puts.index[0])
+            major_put_wall_oi = int(all_below_puts.iloc[0])
+        else:
+            major_put_wall_qqq = round(qqq_spot * 0.95, 0)
+            major_put_wall_oi = 0
 
-        secondary_puts = puts_by_k[(puts_by_k.index < major_put_wall_qqq) & (puts_by_k.index >= qqq_spot * 0.88)].sort_values(ascending=False)
-        near_put_support_qqq = float(secondary_puts.index[0]) if not secondary_puts.empty else major_put_wall_qqq * 0.97
+        secondary_puts = puts_by_k[(puts_by_k.index < major_put_wall_qqq) & (puts_by_k.index >= qqq_spot * 0.86)].sort_values(ascending=False)
+        near_put_support_qqq = float(secondary_puts.index[0]) if not secondary_puts.empty else round(major_put_wall_qqq * 0.97, 0)
         near_put_support_oi = int(secondary_puts.iloc[0]) if not secondary_puts.empty else 0
 
-        major_call_wall_qqq = float(otm_calls.index[0]) if not otm_calls.empty else qqq_spot * 1.05
+        major_call_wall_qqq = float(otm_calls.index[0]) if not otm_calls.empty else round(qqq_spot * 1.05, 0)
         major_call_wall_oi = int(otm_calls.iloc[0]) if not otm_calls.empty else 0
 
-        # Dynamically pick the nearest psychological round-1000 NDX level at or below spot
         nearest_1k = int(round(ndx_spot / 1000.0) * 1000)
         psych_round_ndx = nearest_1k if abs(ndx_spot - nearest_1k) <= 350 else int(np.floor(ndx_spot / 1000.0) * 1000)
         k_psych_qqq = round(psych_round_ndx / ratio)
         oi_near_psych = int(puts_by_k.get(float(k_psych_qqq), 0) + puts_by_k.get(float(k_psych_qqq + 1), 0))
 
-        # Build clean strike profile in $5 QQQ increments (~205 NDX pts) for chart
         strike_min = int(np.floor(qqq_spot * 0.89 / 5.0) * 5)
         strike_max = int(np.ceil(qqq_spot * 1.11 / 5.0) * 5)
         profile: list[dict[str, Any]] = []
@@ -410,17 +573,44 @@ def collect_options_microstructure(qqq_spot: float, ndx_spot: float, risk_free_r
 
         total_put_oi = int(puts_by_k.sum())
         total_call_oi = int(calls_by_k.sum())
+        options_updated_utc = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
         return {
             "available": True,
+            "updated_at_utc": options_updated_utc,
+            "dte_window": "0–45 DTE 近月加权",
             "expirations_scanned": selected_exps,
+            "cleaning_stats": {
+                "raw_contracts": raw_contracts,
+                "kept_contracts": kept_contracts,
+                "dropped_low_oi": dropped_low_oi,
+                "dropped_bad_quote": dropped_bad_quote,
+                "dropped_bad_iv": dropped_bad_iv,
+                "filter_mode": "weekend_lastprice_fallback" if used_weekend_fallback else "strict_bid_ask_30pct",
+                "dte_max_days": 45,
+            },
+            "gamma_hysteresis": {
+                "band_pct": round(band_pct * 100.0, 2),
+                "lower_band_qqq": round(lower_band_qqq, 2),
+                "upper_band_qqq": round(upper_band_qqq, 2),
+                "lower_band_ndx": lower_band_ndx,
+                "upper_band_ndx": upper_band_ndx,
+                "dist_to_flip_pct": dist_to_flip_pct,
+                "held_30m_below": held_30m_below,
+                "held_30m_above": held_30m_above,
+                "gamma_state": gamma_state,
+            },
+            "assumption_note": (
+                "注：已过滤 OI<100、Bid=0、买卖点差>30% 及 IV异常(≤0%或>300%)脏合约，仅取 0–45 DTE 近月加权解算；"
+                "GEX 基于公开未平仓量按行业默认头寸假设（做市商净多Call/净空Put）估算，极端单边行情下真实翻转位可能存在漂移。"
+            ),
             "qqq_spot": round(qqq_spot, 2),
             "ndx_spot": round(ndx_spot, 2),
             "ndx_qqq_ratio": round(ratio, 4),
             "in_negative_gamma": bool(net_gex_m < 0 or ndx_spot < zero_gamma_ndx),
             "net_gex_m": round(net_gex_m, 2),
             "zero_gamma_qqq": round(zero_gamma_qqq, 2),
-            "zero_gamma_ndx": int(zero_gamma_ndx),
+            "zero_gamma_ndx": zero_gamma_ndx,
             "major_put_wall": {
                 "qqq_strike": major_put_wall_qqq,
                 "ndx_equiv": int(round(major_put_wall_qqq * ratio)),
@@ -572,19 +762,42 @@ def collect_all_market_data() -> dict[str, Any]:
     started_at = datetime.now(timezone.utc)
     fred = collect_fred_data()
     quotes = collect_market_quotes()
+    quotes_fetched_utc = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
-    qqq_px = quotes.get("QQQ", {}).get("price", 638.0)
-    ndx_px = quotes.get("^NDX", {}).get("price", 26215.0)
+    qqq_item = quotes.get("QQQ", {})
+    ndx_item = quotes.get("^NDX", {})
+    qqq_px = qqq_item.get("price", 638.0)
+    ndx_px = ndx_item.get("price", 26215.0)
     rfr = fred["metrics"].get("DGS3MO", {}).get("value", 4.5) / 100.0
 
-    options_micro = collect_options_microstructure(qqq_spot=qqq_px, ndx_spot=ndx_px, risk_free_rate=rfr)
+    options_micro = collect_options_microstructure(
+        qqq_spot=qqq_px,
+        ndx_spot=ndx_px,
+        risk_free_rate=rfr,
+        qqq_recent_30m_closes=qqq_item.get("recent_30m_closes"),
+    )
     ai_ledger = collect_ai_capex_ledger()
     cal = compute_settlement_calendar()
 
+    bar_candidates = [
+        q.get("last_bar_utc")
+        for k, q in quotes.items()
+        if k in ("QQQ", "^NDX", "NVDA", "GC=F") and q.get("last_bar_utc")
+    ]
+    quotes_bar_utc = max(bar_candidates) if bar_candidates else quotes_fetched_utc
+    collected_utc = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     elapsed = (datetime.now(timezone.utc) - started_at).total_seconds()
+
     return {
-        "collected_at_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "collected_at_utc": collected_utc,
         "elapsed_seconds": round(elapsed, 2),
+        "module_timestamps": {
+            "quotes_utc": quotes_fetched_utc,
+            "quotes_bar_utc": quotes_bar_utc,
+            "options_utc": options_micro.get("updated_at_utc") or collected_utc,
+            "fred_utc": fred.get("updated_at_utc") or collected_utc,
+            "fred_obs_date": fred.get("latest_obs_date"),
+        },
         "calendar": cal,
         "fred": fred,
         "quotes": quotes,

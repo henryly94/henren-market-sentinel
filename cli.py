@@ -14,18 +14,22 @@ from sentinel.analyzer import analyze_market_snapshot
 from sentinel.collectors import collect_all_market_data
 from sentinel.report_builder import write_reports
 from sentinel.scheduler import compute_smart_schedule_plan
-from sentinel.storage import BASE_DIR, DATA_DIR, REPORTS_DIR, save_run, seed_history_from_json
+from sentinel.storage import BASE_DIR, DATA_DIR, REPORTS_DIR, list_run_history, save_run, seed_history_from_json
 
 
 def execute_market_check(trigger_source: str = "cli") -> dict[str, Any]:
-    """Run full data collection, 5-layer regime analysis, smart schedule plan, and report output."""
+    """Run full data collection, 5-layer regime analysis (with Hysteresis), smart schedule plan, and report output."""
+    prior_runs = list_run_history(limit=1)
+    prev_run = prior_runs[0] if prior_runs else None
+
     snapshot = collect_all_market_data()
-    analysis = analyze_market_snapshot(snapshot)
+    analysis = analyze_market_snapshot(snapshot, prev_run=prev_run)
     schedule_plan = compute_smart_schedule_plan()
     bundle: dict[str, Any] = {
         "snapshot": snapshot,
         "analysis": analysis,
         "scheduler": schedule_plan,
+        "fallback_cached": False,
     }
     run_id = save_run(bundle, trigger_source=trigger_source)
     report_path = write_reports(bundle)

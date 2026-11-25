@@ -1,6 +1,52 @@
 {
   "runs": [
     {
+      "id": 8,
+      "collected_at_utc": "2026-11-25T21:38:59Z",
+      "trigger_source": "v2_p0_p2_verified",
+      "overall_risk_score": 97,
+      "plumbing_score": 87,
+      "credit_score": 100,
+      "micro_score": 100,
+      "ai_score": 100,
+      "gold_opp_score": 92,
+      "headline": "防守反击期：「不是钱没了，是钱贵了」· 美股AI周期顶反抽减杠杆，黄金逢洗盘分批吸纳",
+      "regime_code": "DEFENSIVE_BOUNCE",
+      "gamma_state": "NEGATIVE_CONFIRMED",
+      "sofr_corridor_state": "STRESS_CONFIRMED",
+      "ndx_spot": 26050.15,
+      "gold_spot": 3614.9,
+      "move_spot": 97.54,
+      "sofr_iorb_bps": 4.0,
+      "ccc_yield": 18.66,
+      "risk_delta": 0,
+      "transition_tags": [],
+      "has_transition": false
+    },
+    {
+      "id": 7,
+      "collected_at_utc": "2026-11-25T21:37:33Z",
+      "trigger_source": "v2_p0_p2_upgrade",
+      "overall_risk_score": 97,
+      "plumbing_score": 87,
+      "credit_score": 100,
+      "micro_score": 100,
+      "ai_score": 100,
+      "gold_opp_score": 92,
+      "headline": "防守反击期：「不是钱没了，是钱贵了」· 美股AI周期顶反抽减杠杆，黄金逢洗盘分批吸纳",
+      "regime_code": "DEFENSIVE_BOUNCE",
+      "gamma_state": "NEGATIVE_CONFIRMED",
+      "sofr_corridor_state": "STRESS_CONFIRMED",
+      "ndx_spot": 26050.15,
+      "gold_spot": 3612.9,
+      "move_spot": 97.54,
+      "sofr_iorb_bps": 4.0,
+      "ccc_yield": 18.66,
+      "risk_delta": 1,
+      "transition_tags": [],
+      "has_transition": false
+    },
+    {
       "id": 6,
       "collected_at_utc": "2026-11-25T16:17:30Z",
       "trigger_source": "intraday_live",
@@ -14,7 +60,10 @@
       "ndx_spot": 25029.52,
       "gold_spot": 3477.4,
       "sofr_iorb_bps": 4.0,
-      "ccc_yield": 18.66
+      "ccc_yield": 18.66,
+      "risk_delta": 0,
+      "transition_tags": [],
+      "has_transition": false
     },
     {
       "id": 5,
@@ -30,7 +79,10 @@
       "ndx_spot": 25034.4,
       "gold_spot": 3479.9,
       "sofr_iorb_bps": 4.0,
-      "ccc_yield": 18.66
+      "ccc_yield": 18.66,
+      "risk_delta": 0,
+      "transition_tags": [],
+      "has_transition": false
     },
     {
       "id": 4,
@@ -46,7 +98,10 @@
       "ndx_spot": 26214.17,
       "gold_spot": 3545.0,
       "sofr_iorb_bps": 2.0,
-      "ccc_yield": 18.48
+      "ccc_yield": 18.48,
+      "risk_delta": 0,
+      "transition_tags": [],
+      "has_transition": false
     },
     {
       "id": 3,
@@ -62,7 +117,10 @@
       "ndx_spot": 26214.17,
       "gold_spot": 3570.2,
       "sofr_iorb_bps": 2.0,
-      "ccc_yield": 18.48
+      "ccc_yield": 18.48,
+      "risk_delta": 0,
+      "transition_tags": [],
+      "has_transition": false
     },
     {
       "id": 2,
@@ -78,7 +136,10 @@
       "ndx_spot": 26214.17,
       "gold_spot": 3552.8,
       "sofr_iorb_bps": 2.0,
-      "ccc_yield": 18.48
+      "ccc_yield": 18.48,
+      "risk_delta": 0,
+      "transition_tags": [],
+      "has_transition": false
     }
   ]
 }

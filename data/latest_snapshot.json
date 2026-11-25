@@ -1,7 +1,14 @@
 {
   "snapshot": {
-    "collected_at_utc": "2026-11-25T16:17:30Z",
-    "elapsed_seconds": 7.48,
+    "collected_at_utc": "2026-11-25T21:38:59Z",
+    "elapsed_seconds": 6.87,
+    "module_timestamps": {
+      "quotes_utc": "2026-11-25T21:38:57Z",
+      "quotes_bar_utc": "2026-11-25T21:25:00Z",
+      "options_utc": "2026-11-25T21:38:58Z",
+      "fred_utc": "2026-11-25T21:38:53Z",
+      "fred_obs_date": "2026-11-24"
+    },
     "calendar": {
       "today": "2026-11-25",
       "month_end_settlement": "2026-11-30",
@@ -396,7 +403,7 @@
           "unit": "%",
           "group": "plumbing",
           "value": 3.9,
-          "date": "2026-11-25",
+          "date": "2026-11-27",
           "chg_1": 0.0,
           "chg_5": 0.0,
           "chg_20": 0.0,
@@ -404,14 +411,6 @@
           "min_1y": 3.65,
           "max_1y": 3.9,
           "history": [
-            {
-              "date": "2026-08-28",
-              "value": 3.65
-            },
-            {
-              "date": "2026-08-29",
-              "value": 3.65
-            },
             {
               "date": "2026-08-30",
               "value": 3.65
@@ -762,6 +761,14 @@
             },
             {
               "date": "2026-11-25",
+              "value": 3.9
+            },
+            {
+              "date": "2026-11-26",
+              "value": 3.9
+            },
+            {
+              "date": "2026-11-27",
               "value": 3.9
             }
           ]
@@ -1147,19 +1154,15 @@
           "name": "ON RRP 隔夜逆回购余额",
           "unit": "$B",
           "group": "plumbing",
-          "value": 0.301,
-          "date": "2026-11-24",
-          "chg_1": -0.049,
-          "chg_5": -0.05,
-          "chg_20": 0.101,
+          "value": 0.3,
+          "date": "2026-11-25",
+          "chg_1": -0.001,
+          "chg_5": -0.031,
+          "chg_20": 0.074,
           "pct_1y": 16.7,
           "min_1y": 0.03,
           "max_1y": 105.993,
           "history": [
-            {
-              "date": "2026-07-17",
-              "value": 0.1
-            },
             {
               "date": "2026-07-20",
               "value": 0.03
@@ -1515,6 +1518,10 @@
             {
               "date": "2026-11-24",
               "value": 0.301
+            },
+            {
+              "date": "2026-11-25",
+              "value": 0.3
             }
           ]
         },
@@ -3795,19 +3802,15 @@
           "name": "10年期美债收益率",
           "unit": "%",
           "group": "rates",
-          "value": 4.92,
-          "date": "2026-11-23",
-          "chg_1": 0.0,
-          "chg_5": -0.2,
-          "chg_20": -0.08,
-          "pct_1y": 82.5,
+          "value": 4.91,
+          "date": "2026-11-24",
+          "chg_1": -0.01,
+          "chg_5": -0.19,
+          "chg_20": -0.09,
+          "pct_1y": 81.7,
           "min_1y": 3.97,
           "max_1y": 5.31,
           "history": [
-            {
-              "date": "2026-07-16",
-              "value": 4.57
-            },
             {
               "date": "2026-07-17",
               "value": 4.55
@@ -4163,6 +4166,10 @@
             {
               "date": "2026-11-23",
               "value": 4.92
+            },
+            {
+              "date": "2026-11-24",
+              "value": 4.91
             }
           ]
         },
@@ -4172,18 +4179,14 @@
           "unit": "%",
           "group": "rates",
           "value": 4.63,
-          "date": "2026-11-23",
+          "date": "2026-11-24",
           "chg_1": 0.0,
-          "chg_5": -0.2,
-          "chg_20": -0.06,
+          "chg_5": -0.17,
+          "chg_20": -0.05,
           "pct_1y": 84.5,
           "min_1y": 3.38,
           "max_1y": 4.92,
           "history": [
-            {
-              "date": "2026-07-16",
-              "value": 4.16
-            },
             {
               "date": "2026-07-17",
               "value": 4.18
@@ -4539,6 +4542,10 @@
             {
               "date": "2026-11-23",
               "value": 4.63
+            },
+            {
+              "date": "2026-11-24",
+              "value": 4.63
             }
           ]
         },
@@ -4547,19 +4554,15 @@
           "name": "3个月美债收益率",
           "unit": "%",
           "group": "rates",
-          "value": 4.37,
-          "date": "2026-11-23",
-          "chg_1": 0.05,
+          "value": 4.36,
+          "date": "2026-11-24",
+          "chg_1": -0.01,
           "chg_5": 0.03,
-          "chg_20": 0.15,
-          "pct_1y": 100.0,
+          "chg_20": 0.14,
+          "pct_1y": 99.6,
           "min_1y": 3.62,
           "max_1y": 4.37,
           "history": [
-            {
-              "date": "2026-07-16",
-              "value": 3.84
-            },
             {
               "date": "2026-07-17",
               "value": 3.85
@@ -4915,6 +4918,10 @@
             {
               "date": "2026-11-23",
               "value": 4.37
+            },
+            {
+              "date": "2026-11-24",
+              "value": 4.36
             }
           ]
         },
@@ -4924,18 +4931,14 @@
           "unit": "%",
           "group": "rates",
           "value": 2.79,
-          "date": "2026-11-23",
-          "chg_1": 0.02,
-          "chg_5": -0.13,
+          "date": "2026-11-24",
+          "chg_1": 0.0,
+          "chg_5": -0.1,
           "chg_20": 0.13,
           "pct_1y": 91.7,
           "min_1y": 1.72,
           "max_1y": 2.95,
           "history": [
-            {
-              "date": "2026-07-16",
-              "value": 2.35
-            },
             {
               "date": "2026-07-17",
               "value": 2.31
@@ -5290,6 +5293,10 @@
             },
             {
               "date": "2026-11-23",
+              "value": 2.79
+            },
+            {
+              "date": "2026-11-24",
               "value": 2.79
             }
           ]
@@ -6803,7 +6810,7 @@
         "net_liquidity": {
           "value_bn": 5824.54,
           "value_tn": 5.825,
-          "date": "2026-11-24",
+          "date": "2026-11-25",
           "chg_4w_bn": 78.81,
           "chg_13w_bn": 45.06,
           "series": [
@@ -7175,13 +7182,92 @@
         },
         "sofr_iorb_spread": {
           "value_bps": 4.0,
+          "prev_value_bps": 2.0,
+          "consecutive_days_above_zero": 4,
+          "consecutive_days_above_5bps": 0,
           "sofr": 3.94,
           "iorb": 3.9,
-          "date": "2026-11-25",
-          "max_20d_bps": 4.0,
+          "date": "2026-11-24",
+          "max_20d_bps": 7.0,
           "history": [
             {
-              "date": "2026-09-27",
+              "date": "2026-08-28",
+              "spread_bps": 0.0
+            },
+            {
+              "date": "2026-08-31",
+              "spread_bps": 3.0
+            },
+            {
+              "date": "2026-09-01",
+              "spread_bps": 1.0
+            },
+            {
+              "date": "2026-09-02",
+              "spread_bps": 0.0
+            },
+            {
+              "date": "2026-09-03",
+              "spread_bps": 1.0
+            },
+            {
+              "date": "2026-09-04",
+              "spread_bps": 0.0
+            },
+            {
+              "date": "2026-09-08",
+              "spread_bps": -1.0
+            },
+            {
+              "date": "2026-09-09",
+              "spread_bps": -1.0
+            },
+            {
+              "date": "2026-09-10",
+              "spread_bps": -3.0
+            },
+            {
+              "date": "2026-09-11",
+              "spread_bps": -3.0
+            },
+            {
+              "date": "2026-09-14",
+              "spread_bps": -3.0
+            },
+            {
+              "date": "2026-09-15",
+              "spread_bps": -1.0
+            },
+            {
+              "date": "2026-09-16",
+              "spread_bps": -3.0
+            },
+            {
+              "date": "2026-09-17",
+              "spread_bps": -5.0
+            },
+            {
+              "date": "2026-09-18",
+              "spread_bps": -5.0
+            },
+            {
+              "date": "2026-09-21",
+              "spread_bps": -5.0
+            },
+            {
+              "date": "2026-09-22",
+              "spread_bps": -3.0
+            },
+            {
+              "date": "2026-09-23",
+              "spread_bps": -3.0
+            },
+            {
+              "date": "2026-09-24",
+              "spread_bps": -2.0
+            },
+            {
+              "date": "2026-09-25",
               "spread_bps": 0.0
             },
             {
@@ -7205,14 +7291,6 @@
               "spread_bps": -2.0
             },
             {
-              "date": "2026-10-03",
-              "spread_bps": -2.0
-            },
-            {
-              "date": "2026-10-04",
-              "spread_bps": -2.0
-            },
-            {
               "date": "2026-10-05",
               "spread_bps": -1.0
             },
@@ -7233,18 +7311,6 @@
               "spread_bps": -3.0
             },
             {
-              "date": "2026-10-10",
-              "spread_bps": -3.0
-            },
-            {
-              "date": "2026-10-11",
-              "spread_bps": -3.0
-            },
-            {
-              "date": "2026-10-12",
-              "spread_bps": -3.0
-            },
-            {
               "date": "2026-10-13",
               "spread_bps": -1.0
             },
@@ -7258,14 +7324,6 @@
             },
             {
               "date": "2026-10-16",
-              "spread_bps": -2.0
-            },
-            {
-              "date": "2026-10-17",
-              "spread_bps": -2.0
-            },
-            {
-              "date": "2026-10-18",
               "spread_bps": -2.0
             },
             {
@@ -7289,14 +7347,6 @@
               "spread_bps": 2.0
             },
             {
-              "date": "2026-10-24",
-              "spread_bps": 2.0
-            },
-            {
-              "date": "2026-10-25",
-              "spread_bps": 2.0
-            },
-            {
               "date": "2026-10-26",
               "spread_bps": 3.0
             },
@@ -7314,14 +7364,6 @@
             },
             {
               "date": "2026-10-30",
-              "spread_bps": 5.0
-            },
-            {
-              "date": "2026-10-31",
-              "spread_bps": 5.0
-            },
-            {
-              "date": "2026-11-01",
               "spread_bps": 5.0
             },
             {
@@ -7345,14 +7387,6 @@
               "spread_bps": -1.0
             },
             {
-              "date": "2026-11-07",
-              "spread_bps": -1.0
-            },
-            {
-              "date": "2026-11-08",
-              "spread_bps": -1.0
-            },
-            {
               "date": "2026-11-09",
               "spread_bps": -2.0
             },
@@ -7361,23 +7395,11 @@
               "spread_bps": -1.0
             },
             {
-              "date": "2026-11-11",
-              "spread_bps": -1.0
-            },
-            {
               "date": "2026-11-12",
               "spread_bps": 0.0
             },
             {
               "date": "2026-11-13",
-              "spread_bps": 0.0
-            },
-            {
-              "date": "2026-11-14",
-              "spread_bps": 0.0
-            },
-            {
-              "date": "2026-11-15",
               "spread_bps": 0.0
             },
             {
@@ -7401,47 +7423,40 @@
               "spread_bps": 2.0
             },
             {
-              "date": "2026-11-21",
-              "spread_bps": 2.0
-            },
-            {
-              "date": "2026-11-22",
-              "spread_bps": 2.0
-            },
-            {
               "date": "2026-11-23",
               "spread_bps": 2.0
             },
             {
               "date": "2026-11-24",
               "spread_bps": 4.0
-            },
-            {
-              "date": "2026-11-25",
-              "spread_bps": 4.0
             }
           ]
         }
-      }
+      },
+      "updated_at_utc": "2026-11-25T21:38:53Z",
+      "latest_obs_date": "2026-11-24"
     },
     "quotes": {
       "^NDX": {
         "symbol": "^NDX",
         "name": "纳斯达克100指数",
         "category": "index",
-        "price": 25029.52,
+        "price": 26050.15,
         "date": "2026-11-25",
-        "ret_1d_pct": -4.52,
-        "ret_5d_pct": -7.7,
-        "ret_20d_pct": -16.05,
-        "drawdown_52w_pct": -19.84,
+        "last_bar_utc": "2026-11-25T20:55:00Z",
+        "ret_1d_pct": -0.63,
+        "ret_5d_pct": -3.93,
+        "ret_20d_pct": -12.62,
+        "chg_5_abs": -1066.11,
+        "chg_20_abs": -3763.01,
+        "drawdown_52w_pct": -16.57,
         "high_52w": 31224.47,
         "low_52w": 22953.38,
-        "pct_1y": 17.1,
-        "ma50": 29043.86,
-        "ma200": 28085.89,
+        "pct_1y": 38.2,
+        "ma50": 29064.27,
+        "ma200": 28090.99,
         "above_ma200": false,
-        "rsi14": 41.2,
+        "rsi14": 46.4,
         "history_60d": [
           {
             "date": "2026-09-02",
@@ -7681,27 +7696,38 @@
           },
           {
             "date": "2026-11-25",
-            "close": 25029.52
+            "close": 26050.15
           }
+        ],
+        "recent_30m_closes": [
+          25907.83,
+          25873.29,
+          25920.53,
+          25998.43,
+          26007.99,
+          26050.15
         ]
       },
       "QQQ": {
         "symbol": "QQQ",
         "name": "纳指100 ETF (QQQ)",
         "category": "index",
-        "price": 609.29,
+        "price": 633.81,
         "date": "2026-11-25",
-        "ret_1d_pct": -4.51,
-        "ret_5d_pct": -7.61,
-        "ret_20d_pct": -16.03,
-        "drawdown_52w_pct": -19.79,
+        "last_bar_utc": "2026-11-25T20:55:00Z",
+        "ret_1d_pct": -0.67,
+        "ret_5d_pct": -3.9,
+        "ret_20d_pct": -12.65,
+        "chg_5_abs": -25.7,
+        "chg_20_abs": -91.8,
+        "drawdown_52w_pct": -16.57,
         "high_52w": 759.66,
         "low_52w": 558.28,
-        "pct_1y": 17.5,
-        "ma50": 706.56,
-        "ma200": 683.38,
+        "pct_1y": 38.2,
+        "ma50": 707.05,
+        "ma200": 683.5,
         "above_ma200": false,
-        "rsi14": 41.6,
+        "rsi14": 46.7,
         "history_60d": [
           {
             "date": "2026-09-02",
@@ -7941,27 +7967,38 @@
           },
           {
             "date": "2026-11-25",
-            "close": 609.29
+            "close": 633.81
           }
+        ],
+        "recent_30m_closes": [
+          630.48,
+          629.64,
+          630.97,
+          632.35,
+          632.79,
+          633.81
         ]
       },
       "^GSPC": {
         "symbol": "^GSPC",
         "name": "标普500指数",
         "category": "index",
-        "price": 6993.72,
+        "price": 7182.73,
         "date": "2026-11-25",
-        "ret_1d_pct": -2.88,
-        "ret_5d_pct": -4.5,
-        "ret_20d_pct": -9.69,
-        "drawdown_52w_pct": -10.55,
+        "last_bar_utc": "2026-11-25T20:55:00Z",
+        "ret_1d_pct": -0.25,
+        "ret_5d_pct": -1.92,
+        "ret_20d_pct": -7.25,
+        "chg_5_abs": -140.9,
+        "chg_20_abs": -561.25,
+        "drawdown_52w_pct": -8.14,
         "high_52w": 7818.93,
         "low_52w": 6343.72,
-        "pct_1y": 38.5,
-        "ma50": 7598.75,
-        "ma200": 7351.55,
+        "pct_1y": 43.0,
+        "ma50": 7602.53,
+        "ma200": 7352.49,
         "above_ma200": false,
-        "rsi14": 38.8,
+        "rsi14": 44.0,
         "history_60d": [
           {
             "date": "2026-09-02",
@@ -8201,7 +8238,7 @@
           },
           {
             "date": "2026-11-25",
-            "close": 6993.72
+            "close": 7182.73
           }
         ]
       },
@@ -8209,19 +8246,22 @@
         "symbol": "^MOVE",
         "name": "美债波动率 MOVE",
         "category": "vol",
-        "price": 100.73,
+        "price": 97.54,
         "date": "2026-11-25",
-        "ret_1d_pct": 1.91,
-        "ret_5d_pct": 2.62,
-        "ret_20d_pct": 2.92,
-        "drawdown_52w_pct": -12.43,
+        "last_bar_utc": "2026-11-25T20:45:00Z",
+        "ret_1d_pct": -1.32,
+        "ret_5d_pct": -0.62,
+        "ret_20d_pct": -0.34,
+        "chg_5_abs": -0.61,
+        "chg_20_abs": -0.33,
+        "drawdown_52w_pct": -15.2,
         "high_52w": 115.02,
         "low_52w": 55.77,
-        "pct_1y": 89.6,
-        "ma50": 97.96,
-        "ma200": 80.86,
+        "pct_1y": 83.9,
+        "ma50": 97.89,
+        "ma200": 80.85,
         "above_ma200": true,
-        "rsi14": 56.0,
+        "rsi14": 53.2,
         "history_60d": [
           {
             "date": "2026-08-31",
@@ -8461,7 +8501,7 @@
           },
           {
             "date": "2026-11-25",
-            "close": 100.73
+            "close": 97.54
           }
         ]
       },
@@ -8469,19 +8509,22 @@
         "symbol": "^VIX",
         "name": "恐慌指数 VIX",
         "category": "vol",
-        "price": 33.47,
+        "price": 28.32,
         "date": "2026-11-25",
-        "ret_1d_pct": 26.97,
-        "ret_5d_pct": 36.28,
-        "ret_20d_pct": 97.93,
-        "drawdown_52w_pct": -6.74,
+        "last_bar_utc": "2026-11-25T21:10:00Z",
+        "ret_1d_pct": 7.44,
+        "ret_5d_pct": 15.31,
+        "ret_20d_pct": 67.47,
+        "chg_5_abs": 3.76,
+        "chg_20_abs": 11.41,
+        "drawdown_52w_pct": -21.09,
         "high_52w": 35.89,
         "low_52w": 13.47,
-        "pct_1y": 99.6,
-        "ma50": 19.12,
-        "ma200": 18.81,
+        "pct_1y": 98.0,
+        "ma50": 19.02,
+        "ma200": 18.78,
         "above_ma200": true,
-        "rsi14": 55.6,
+        "rsi14": 50.2,
         "history_60d": [
           {
             "date": "2026-09-03",
@@ -8721,7 +8764,7 @@
           },
           {
             "date": "2026-11-25",
-            "close": 33.47
+            "close": 28.32
           }
         ]
       },
@@ -8731,9 +8774,12 @@
         "category": "vol",
         "price": 36.42,
         "date": "2026-11-24",
+        "last_bar_utc": null,
         "ret_1d_pct": 0.3,
         "ret_5d_pct": 5.75,
         "ret_20d_pct": 46.21,
+        "chg_5_abs": 1.98,
+        "chg_20_abs": 11.51,
         "drawdown_52w_pct": -19.51,
         "high_52w": 45.25,
         "low_52w": 17.2,
@@ -8989,19 +9035,22 @@
         "symbol": "GC=F",
         "name": "COMEX 黄金期货",
         "category": "macro",
-        "price": 3477.4,
+        "price": 3614.9,
         "date": "2026-11-25",
-        "ret_1d_pct": -2.37,
-        "ret_5d_pct": -7.07,
-        "ret_20d_pct": -14.17,
-        "drawdown_52w_pct": -34.62,
+        "last_bar_utc": "2026-11-25T21:25:00Z",
+        "ret_1d_pct": 1.49,
+        "ret_5d_pct": -3.39,
+        "ret_20d_pct": -10.78,
+        "chg_5_abs": -127.0,
+        "chg_20_abs": -436.7,
+        "drawdown_52w_pct": -32.03,
         "high_52w": 5318.4,
-        "low_52w": 3477.4,
-        "pct_1y": 0.4,
-        "ma50": 4063.23,
-        "ma200": 4422.68,
+        "low_52w": 3515.4,
+        "pct_1y": 1.2,
+        "ma50": 4065.98,
+        "ma200": 4423.37,
         "above_ma200": false,
-        "rsi14": 18.6,
+        "rsi14": 24.6,
         "history_60d": [
           {
             "date": "2026-09-02",
@@ -9241,7 +9290,7 @@
           },
           {
             "date": "2026-11-25",
-            "close": 3477.4
+            "close": 3614.9
           }
         ]
       },
@@ -9249,19 +9298,22 @@
         "symbol": "HG=F",
         "name": "COMEX 铜期货",
         "category": "macro",
-        "price": 5.3425,
+        "price": 5.4805,
         "date": "2026-11-25",
-        "ret_1d_pct": -0.37,
-        "ret_5d_pct": -5.6,
-        "ret_20d_pct": -19.56,
-        "drawdown_52w_pct": -21.47,
+        "last_bar_utc": "2026-11-25T21:25:00Z",
+        "ret_1d_pct": 2.2,
+        "ret_5d_pct": -3.16,
+        "ret_20d_pct": -17.48,
+        "chg_5_abs": -0.18,
+        "chg_20_abs": -1.16,
+        "drawdown_52w_pct": -19.45,
         "high_52w": 6.8,
         "low_52w": 5.0,
-        "pct_1y": 5.6,
+        "pct_1y": 11.9,
         "ma50": 6.37,
         "ma200": 6.22,
         "above_ma200": false,
-        "rsi14": 20.5,
+        "rsi14": 26.5,
         "history_60d": [
           {
             "date": "2026-09-02",
@@ -9501,7 +9553,7 @@
           },
           {
             "date": "2026-11-25",
-            "close": 5.3425
+            "close": 5.4805
           }
         ]
       },
@@ -9509,19 +9561,22 @@
         "symbol": "TLT",
         "name": "20年+长端美债 ETF",
         "category": "bond",
-        "price": 82.75,
+        "price": 82.25,
         "date": "2026-11-25",
-        "ret_1d_pct": 1.55,
-        "ret_5d_pct": 3.15,
-        "ret_20d_pct": 2.17,
-        "drawdown_52w_pct": -8.89,
+        "last_bar_utc": "2026-11-25T20:55:00Z",
+        "ret_1d_pct": 0.93,
+        "ret_5d_pct": 2.52,
+        "ret_20d_pct": 1.55,
+        "chg_5_abs": 2.03,
+        "chg_20_abs": 1.26,
+        "drawdown_52w_pct": -9.44,
         "high_52w": 90.82,
         "low_52w": 77.11,
-        "pct_1y": 29.8,
-        "ma50": 80.14,
-        "ma200": 84.04,
+        "pct_1y": 27.5,
+        "ma50": 80.13,
+        "ma200": 84.03,
         "above_ma200": false,
-        "rsi14": 56.3,
+        "rsi14": 52.6,
         "history_60d": [
           {
             "date": "2026-09-02",
@@ -9761,7 +9816,7 @@
           },
           {
             "date": "2026-11-25",
-            "close": 82.75
+            "close": 82.25
           }
         ]
       },
@@ -9771,13 +9826,16 @@
         "category": "bond",
         "price": 110.32,
         "date": "2026-11-25",
-        "ret_1d_pct": 0.03,
+        "last_bar_utc": "2026-11-25T20:55:00Z",
+        "ret_1d_pct": 0.02,
         "ret_5d_pct": 0.09,
         "ret_20d_pct": -0.05,
+        "chg_5_abs": 0.1,
+        "chg_20_abs": -0.06,
         "drawdown_52w_pct": -0.12,
         "high_52w": 110.45,
         "low_52w": 110.02,
-        "pct_1y": 77.4,
+        "pct_1y": 77.7,
         "ma50": 110.21,
         "ma200": 110.22,
         "above_ma200": true,
@@ -10029,19 +10087,22 @@
         "symbol": "HYG",
         "name": "高收益公司债 ETF",
         "category": "bond",
-        "price": 76.28,
+        "price": 76.52,
         "date": "2026-11-25",
-        "ret_1d_pct": -0.2,
-        "ret_5d_pct": -0.49,
-        "ret_20d_pct": -1.69,
-        "drawdown_52w_pct": -6.04,
+        "last_bar_utc": "2026-11-25T20:55:00Z",
+        "ret_1d_pct": 0.12,
+        "ret_5d_pct": -0.17,
+        "ret_20d_pct": -1.38,
+        "chg_5_abs": -0.13,
+        "chg_20_abs": -1.07,
+        "drawdown_52w_pct": -5.74,
         "high_52w": 81.18,
-        "low_52w": 76.28,
-        "pct_1y": 0.4,
+        "low_52w": 76.33,
+        "pct_1y": 1.6,
         "ma50": 77.23,
         "ma200": 79.16,
         "above_ma200": false,
-        "rsi14": 28.4,
+        "rsi14": 33.2,
         "history_60d": [
           {
             "date": "2026-09-02",
@@ -10281,7 +10342,7 @@
           },
           {
             "date": "2026-11-25",
-            "close": 76.28
+            "close": 76.52
           }
         ]
       },
@@ -10289,19 +10350,22 @@
         "symbol": "NVDA",
         "name": "NVIDIA (辉达)",
         "category": "ai_core",
-        "price": 141.72,
+        "price": 149.29,
         "date": "2026-11-25",
-        "ret_1d_pct": -8.79,
-        "ret_5d_pct": -6.12,
-        "ret_20d_pct": -34.2,
-        "drawdown_52w_pct": -40.76,
+        "last_bar_utc": "2026-11-25T20:55:00Z",
+        "ret_1d_pct": -3.92,
+        "ret_5d_pct": -1.11,
+        "ret_20d_pct": -30.69,
+        "chg_5_abs": -1.67,
+        "chg_20_abs": -66.09,
+        "drawdown_52w_pct": -37.6,
         "high_52w": 239.24,
         "low_52w": 125.53,
-        "pct_1y": 0.8,
-        "ma50": 203.5,
-        "ma200": 202.84,
+        "pct_1y": 1.2,
+        "ma50": 203.65,
+        "ma200": 202.87,
         "above_ma200": false,
-        "rsi14": 35.6,
+        "rsi14": 37.7,
         "history_60d": [
           {
             "date": "2026-09-02",
@@ -10541,7 +10605,7 @@
           },
           {
             "date": "2026-11-25",
-            "close": 141.72
+            "close": 149.29
           }
         ]
       },
@@ -10549,19 +10613,22 @@
         "symbol": "AVGO",
         "name": "Broadcom (博通)",
         "category": "ai_core",
-        "price": 281.52,
+        "price": 300.49,
         "date": "2026-11-25",
-        "ret_1d_pct": -6.5,
-        "ret_5d_pct": -20.49,
-        "ret_20d_pct": -19.98,
-        "drawdown_52w_pct": -41.54,
+        "last_bar_utc": "2026-11-25T20:55:00Z",
+        "ret_1d_pct": -0.2,
+        "ret_5d_pct": -15.13,
+        "ret_20d_pct": -14.59,
+        "chg_5_abs": -53.56,
+        "chg_20_abs": -51.32,
+        "drawdown_52w_pct": -37.6,
         "high_52w": 481.57,
-        "low_52w": 281.52,
-        "pct_1y": 0.4,
-        "ma50": 340.16,
-        "ma200": 367.21,
+        "low_52w": 291.53,
+        "pct_1y": 1.6,
+        "ma50": 340.54,
+        "ma200": 367.31,
         "above_ma200": false,
-        "rsi14": 47.7,
+        "rsi14": 52.3,
         "history_60d": [
           {
             "date": "2026-09-02",
@@ -10801,7 +10868,7 @@
           },
           {
             "date": "2026-11-25",
-            "close": 281.52
+            "close": 300.49
           }
         ]
       },
@@ -10809,19 +10876,22 @@
         "symbol": "SMH",
         "name": "半导体 ETF (SMH)",
         "category": "ai_core",
-        "price": 395.48,
+        "price": 422.49,
         "date": "2026-11-25",
-        "ret_1d_pct": -7.33,
-        "ret_5d_pct": -13.94,
-        "ret_20d_pct": -30.33,
-        "drawdown_52w_pct": -40.88,
+        "last_bar_utc": "2026-11-25T20:55:00Z",
+        "ret_1d_pct": -1.0,
+        "ret_5d_pct": -8.06,
+        "ret_20d_pct": -25.57,
+        "chg_5_abs": -37.05,
+        "chg_20_abs": -145.18,
+        "drawdown_52w_pct": -36.84,
         "high_52w": 668.91,
         "low_52w": 339.24,
-        "pct_1y": 22.2,
-        "ma50": 540.57,
-        "ma200": 525.52,
+        "pct_1y": 35.9,
+        "ma50": 541.11,
+        "ma200": 525.65,
         "above_ma200": false,
-        "rsi14": 41.2,
+        "rsi14": 45.4,
         "history_60d": [
           {
             "date": "2026-09-02",
@@ -11061,7 +11131,7 @@
           },
           {
             "date": "2026-11-25",
-            "close": 395.48
+            "close": 422.49
           }
         ]
       },
@@ -11069,19 +11139,22 @@
         "symbol": "CRWV",
         "name": "CoreWeave (二线算力)",
         "category": "ai_canary",
-        "price": 37.74,
+        "price": 42.54,
         "date": "2026-11-25",
-        "ret_1d_pct": -11.42,
-        "ret_5d_pct": -21.1,
-        "ret_20d_pct": -40.97,
-        "drawdown_52w_pct": -72.65,
+        "last_bar_utc": "2026-11-25T20:55:00Z",
+        "ret_1d_pct": -0.15,
+        "ret_5d_pct": -11.06,
+        "ret_20d_pct": -33.46,
+        "chg_5_abs": -5.29,
+        "chg_20_abs": -21.39,
+        "drawdown_52w_pct": -69.17,
         "high_52w": 137.98,
-        "low_52w": 37.74,
-        "pct_1y": 0.4,
-        "ma50": 65.62,
-        "ma200": 87.23,
+        "low_52w": 39.51,
+        "pct_1y": 0.8,
+        "ma50": 65.72,
+        "ma200": 87.26,
         "above_ma200": false,
-        "rsi14": 44.9,
+        "rsi14": 49.0,
         "history_60d": [
           {
             "date": "2026-09-02",
@@ -11321,7 +11394,7 @@
           },
           {
             "date": "2026-11-25",
-            "close": 37.74
+            "close": 42.54
           }
         ]
       },
@@ -11329,17 +11402,20 @@
         "symbol": "ANT",
         "name": "Anthropic (超级IPO)",
         "category": "ai_canary",
-        "price": 79.41,
+        "price": 82.79,
         "date": "2026-11-25",
-        "ret_1d_pct": -3.05,
-        "ret_5d_pct": -18.28,
-        "ret_20d_pct": -18.28,
-        "drawdown_52w_pct": -18.28,
+        "last_bar_utc": "2026-11-25T20:55:00Z",
+        "ret_1d_pct": 1.07,
+        "ret_5d_pct": -14.8,
+        "ret_20d_pct": -14.8,
+        "chg_5_abs": -14.38,
+        "chg_20_abs": -14.38,
+        "drawdown_52w_pct": -14.8,
         "high_52w": 97.17,
-        "low_52w": 79.41,
-        "pct_1y": 20.0,
-        "ma50": 79.41,
-        "ma200": 79.41,
+        "low_52w": 81.91,
+        "pct_1y": 40.0,
+        "ma50": 82.79,
+        "ma200": 82.79,
         "above_ma200": true,
         "rsi14": null,
         "history_60d": [
@@ -11361,29 +11437,32 @@
           },
           {
             "date": "2026-11-25",
-            "close": 79.41
+            "close": 82.79
           }
         ],
         "ipo_price": 83.0,
-        "vs_ipo_pct": -4.33
+        "vs_ipo_pct": -0.26
       },
       "VST": {
         "symbol": "VST",
         "name": "Vistra (AI电力瓶颈)",
         "category": "ai_power",
-        "price": 115.86,
+        "price": 121.32,
         "date": "2026-11-25",
-        "ret_1d_pct": -4.03,
-        "ret_5d_pct": -7.74,
-        "ret_20d_pct": -18.82,
-        "drawdown_52w_pct": -35.7,
+        "last_bar_utc": "2026-11-25T20:55:00Z",
+        "ret_1d_pct": 0.5,
+        "ret_5d_pct": -3.39,
+        "ret_20d_pct": -14.99,
+        "chg_5_abs": -4.26,
+        "chg_20_abs": -21.4,
+        "drawdown_52w_pct": -32.66,
         "high_52w": 180.18,
         "low_52w": 112.89,
-        "pct_1y": 1.2,
-        "ma50": 139.47,
-        "ma200": 150.77,
+        "pct_1y": 2.0,
+        "ma50": 139.58,
+        "ma200": 150.79,
         "above_ma200": false,
-        "rsi14": 52.4,
+        "rsi14": 57.2,
         "history_60d": [
           {
             "date": "2026-09-02",
@@ -11623,7 +11702,7 @@
           },
           {
             "date": "2026-11-25",
-            "close": 115.86
+            "close": 121.32
           }
         ]
       },
@@ -11631,11 +11710,14 @@
         "symbol": "USDCNH=X",
         "name": "离岸人民币 USD/CNH",
         "category": "china",
-        "price": 6.6713,
+        "price": 6.6662,
         "date": "2026-11-25",
+        "last_bar_utc": "2026-11-25T21:35:00Z",
         "ret_1d_pct": 0.0,
         "ret_5d_pct": 0.0,
         "ret_20d_pct": 0.0,
+        "chg_5_abs": 0.0,
+        "chg_20_abs": 0.0,
         "drawdown_52w_pct": 0.0,
         "high_52w": 6.67,
         "low_52w": 6.67,
@@ -11647,7 +11729,7 @@
         "history_60d": [
           {
             "date": "2026-11-25",
-            "close": 6.6713
+            "close": 6.6662
           }
         ]
       },
@@ -11655,19 +11737,22 @@
         "symbol": "FXI",
         "name": "中国大盘股 ETF (FXI)",
         "category": "china",
-        "price": 30.55,
+        "price": 31.3,
         "date": "2026-11-25",
-        "ret_1d_pct": -2.8,
-        "ret_5d_pct": -5.68,
-        "ret_20d_pct": -5.88,
-        "drawdown_52w_pct": -25.09,
+        "last_bar_utc": "2026-11-25T20:55:00Z",
+        "ret_1d_pct": -0.41,
+        "ret_5d_pct": -3.37,
+        "ret_20d_pct": -3.57,
+        "chg_5_abs": -1.09,
+        "chg_20_abs": -1.16,
+        "drawdown_52w_pct": -23.25,
         "high_52w": 40.78,
-        "low_52w": 30.55,
-        "pct_1y": 0.4,
-        "ma50": 33.46,
+        "low_52w": 31.23,
+        "pct_1y": 0.8,
+        "ma50": 33.48,
         "ma200": 35.1,
         "above_ma200": false,
-        "rsi14": 7.9,
+        "rsi14": 9.2,
         "history_60d": [
           {
             "date": "2026-09-02",
@@ -11907,7 +11992,7 @@
           },
           {
             "date": "2026-11-25",
-            "close": 30.55
+            "close": 31.3
           }
         ]
       },
@@ -11915,19 +12000,22 @@
         "symbol": "KWEB",
         "name": "中概互联 ETF (KWEB)",
         "category": "china",
-        "price": 20.49,
+        "price": 21.19,
         "date": "2026-11-25",
-        "ret_1d_pct": -3.12,
-        "ret_5d_pct": -5.62,
-        "ret_20d_pct": -10.87,
-        "drawdown_52w_pct": -46.06,
+        "last_bar_utc": "2026-11-25T20:55:00Z",
+        "ret_1d_pct": 0.21,
+        "ret_5d_pct": -2.37,
+        "ret_20d_pct": -7.81,
+        "chg_5_abs": -0.51,
+        "chg_20_abs": -1.8,
+        "drawdown_52w_pct": -44.21,
         "high_52w": 37.99,
-        "low_52w": 20.49,
-        "pct_1y": 0.4,
-        "ma50": 23.69,
+        "low_52w": 20.72,
+        "pct_1y": 1.2,
+        "ma50": 23.7,
         "ma200": 26.87,
         "above_ma200": false,
-        "rsi14": 14.0,
+        "rsi14": 16.5,
         "history_60d": [
           {
             "date": "2026-09-02",
@@ -12167,7 +12255,7 @@
           },
           {
             "date": "2026-11-25",
-            "close": 20.49
+            "close": 21.19
           }
         ]
       },
@@ -12177,9 +12265,12 @@
         "category": "asia_canary",
         "price": 4701.9,
         "date": "2026-11-25",
+        "last_bar_utc": "2026-11-25T05:55:00Z",
         "ret_1d_pct": -6.08,
         "ret_5d_pct": -7.21,
         "ret_20d_pct": -21.8,
+        "chg_5_abs": -365.54,
+        "chg_20_abs": -1310.54,
         "drawdown_52w_pct": -48.41,
         "high_52w": 9114.55,
         "low_52w": 3857.78,
@@ -12434,457 +12525,488 @@
     },
     "options": {
       "available": true,
+      "updated_at_utc": "2026-11-25T21:38:58Z",
+      "dte_window": "0–45 DTE 近月加权",
       "expirations_scanned": [
-        "2026-11-25",
         "2026-11-27",
         "2026-11-30",
         "2026-12-01",
         "2026-12-02",
+        "2026-12-03",
+        "2026-12-04",
         "2026-12-18",
         "2026-12-31"
       ],
-      "qqq_spot": 609.29,
-      "ndx_spot": 25029.52,
-      "ndx_qqq_ratio": 41.0798,
+      "cleaning_stats": {
+        "raw_contracts": 1926,
+        "kept_contracts": 1065,
+        "dropped_low_oi": 686,
+        "dropped_bad_quote": 175,
+        "dropped_bad_iv": 0,
+        "filter_mode": "strict_bid_ask_30pct",
+        "dte_max_days": 45
+      },
+      "gamma_hysteresis": {
+        "band_pct": 0.75,
+        "lower_band_qqq": 656.58,
+        "upper_band_qqq": 666.51,
+        "lower_band_ndx": 26986,
+        "upper_band_ndx": 27394,
+        "dist_to_flip_pct": -4.19,
+        "held_30m_below": true,
+        "held_30m_above": false,
+        "gamma_state": "NEGATIVE_CONFIRMED"
+      },
+      "assumption_note": "注：已过滤 OI<100、Bid=0、买卖点差>30% 及 IV异常(≤0%或>300%)脏合约，仅取 0–45 DTE 近月加权解算；GEX 基于公开未平仓量按行业默认头寸假设（做市商净多Call/净空Put）估算，极端单边行情下真实翻转位可能存在漂移。",
+      "qqq_spot": 633.81,
+      "ndx_spot": 26050.15,
+      "ndx_qqq_ratio": 41.1009,
       "in_negative_gamma": true,
-      "net_gex_m": -3952.54,
-      "zero_gamma_qqq": 662.31,
-      "zero_gamma_ndx": 27207,
+      "net_gex_m": -2508.8,
+      "zero_gamma_qqq": 661.54,
+      "zero_gamma_ndx": 27190,
       "major_put_wall": {
         "qqq_strike": 600.0,
-        "ndx_equiv": 24648,
-        "open_interest": 120897,
-        "dist_pct": -1.52
+        "ndx_equiv": 24661,
+        "open_interest": 122314,
+        "dist_pct": -5.33
       },
       "near_put_support": {
-        "qqq_strike": 550.0,
-        "ndx_equiv": 22594,
-        "open_interest": 129490,
-        "dist_pct": -9.73
+        "qqq_strike": 580.0,
+        "ndx_equiv": 23839,
+        "open_interest": 105752,
+        "dist_pct": -8.49
       },
       "major_call_wall": {
-        "qqq_strike": 680.0,
-        "ndx_equiv": 27934,
-        "open_interest": 142512,
-        "dist_pct": 11.61
+        "qqq_strike": 700.0,
+        "ndx_equiv": 28771,
+        "open_interest": 136560,
+        "dist_pct": 10.44
       },
       "psych_25000_check": {
-        "psych_round_ndx": 25000,
-        "qqq_equiv_strike": 609,
-        "put_oi_near_25000": 79628,
-        "wall_to_25000_oi_ratio": 1.5
+        "psych_round_ndx": 26000,
+        "qqq_equiv_strike": 633,
+        "put_oi_near_25000": 5592,
+        "wall_to_25000_oi_ratio": 21.9
       },
-      "put_call_oi_ratio": 2.11,
+      "put_call_oi_ratio": 1.58,
       "strike_profile": [
         {
-          "qqq_strike": 540,
-          "ndx_equiv": 22183,
-          "call_oi": 5553,
-          "put_oi": 78787,
-          "net_gex_m": -69.83
-        },
-        {
-          "qqq_strike": 545,
-          "ndx_equiv": 22388,
-          "call_oi": 1577,
-          "put_oi": 12662,
-          "net_gex_m": -9.62
-        },
-        {
-          "qqq_strike": 550,
-          "ndx_equiv": 22594,
-          "call_oi": 7602,
-          "put_oi": 130467,
-          "net_gex_m": -113.06
-        },
-        {
-          "qqq_strike": 555,
-          "ndx_equiv": 22799,
-          "call_oi": 644,
-          "put_oi": 33915,
-          "net_gex_m": -36.18
-        },
-        {
           "qqq_strike": 560,
-          "ndx_equiv": 23005,
-          "call_oi": 1310,
-          "put_oi": 48180,
-          "net_gex_m": -60.21
+          "ndx_equiv": 23016,
+          "call_oi": 1183,
+          "put_oi": 43008,
+          "net_gex_m": -35.83
         },
         {
           "qqq_strike": 565,
-          "ndx_equiv": 23210,
-          "call_oi": 1337,
-          "put_oi": 58751,
-          "net_gex_m": -79.06
+          "ndx_equiv": 23222,
+          "call_oi": 1130,
+          "put_oi": 51172,
+          "net_gex_m": -50.46
         },
         {
           "qqq_strike": 570,
-          "ndx_equiv": 23415,
-          "call_oi": 4218,
-          "put_oi": 37772,
-          "net_gex_m": -52.23
+          "ndx_equiv": 23428,
+          "call_oi": 4139,
+          "put_oi": 35243,
+          "net_gex_m": -32.13
         },
         {
           "qqq_strike": 575,
-          "ndx_equiv": 23621,
-          "call_oi": 784,
-          "put_oi": 47147,
-          "net_gex_m": -85.66
+          "ndx_equiv": 23633,
+          "call_oi": 702,
+          "put_oi": 44138,
+          "net_gex_m": -47.88
         },
         {
           "qqq_strike": 580,
-          "ndx_equiv": 23826,
-          "call_oi": 2317,
-          "put_oi": 114879,
-          "net_gex_m": -243.5
+          "ndx_equiv": 23839,
+          "call_oi": 2166,
+          "put_oi": 109556,
+          "net_gex_m": -131.45
         },
         {
           "qqq_strike": 585,
-          "ndx_equiv": 24032,
-          "call_oi": 3943,
-          "put_oi": 38221,
-          "net_gex_m": -80.7
+          "ndx_equiv": 24044,
+          "call_oi": 3899,
+          "put_oi": 56610,
+          "net_gex_m": -82.71
         },
         {
           "qqq_strike": 590,
-          "ndx_equiv": 24237,
-          "call_oi": 3999,
-          "put_oi": 94601,
-          "net_gex_m": -225.38
+          "ndx_equiv": 24250,
+          "call_oi": 4005,
+          "put_oi": 82769,
+          "net_gex_m": -122.33
         },
         {
           "qqq_strike": 595,
-          "ndx_equiv": 24442,
-          "call_oi": 1086,
-          "put_oi": 44155,
-          "net_gex_m": -166.44
+          "ndx_equiv": 24455,
+          "call_oi": 1207,
+          "put_oi": 40512,
+          "net_gex_m": -59.33
         },
         {
           "qqq_strike": 600,
-          "ndx_equiv": 24648,
-          "call_oi": 10653,
-          "put_oi": 131548,
-          "net_gex_m": -482.98
+          "ndx_equiv": 24661,
+          "call_oi": 11128,
+          "put_oi": 128151,
+          "net_gex_m": -214.14
         },
         {
           "qqq_strike": 605,
-          "ndx_equiv": 24853,
-          "call_oi": 5395,
-          "put_oi": 83423,
-          "net_gex_m": -518.4
+          "ndx_equiv": 24866,
+          "call_oi": 5073,
+          "put_oi": 69358,
+          "net_gex_m": -137.29
         },
         {
           "qqq_strike": 610,
-          "ndx_equiv": 25059,
-          "call_oi": 14214,
-          "put_oi": 90344,
-          "net_gex_m": -426.51
+          "ndx_equiv": 25072,
+          "call_oi": 13312,
+          "put_oi": 105315,
+          "net_gex_m": -229.25
         },
         {
           "qqq_strike": 615,
-          "ndx_equiv": 25264,
-          "call_oi": 13132,
-          "put_oi": 57808,
-          "net_gex_m": -249.45
+          "ndx_equiv": 25277,
+          "call_oi": 12857,
+          "put_oi": 64024,
+          "net_gex_m": -164.56
         },
         {
           "qqq_strike": 620,
-          "ndx_equiv": 25469,
-          "call_oi": 14965,
-          "put_oi": 96674,
-          "net_gex_m": -357.46
+          "ndx_equiv": 25483,
+          "call_oi": 14072,
+          "put_oi": 87265,
+          "net_gex_m": -231.12
         },
         {
           "qqq_strike": 625,
-          "ndx_equiv": 25675,
-          "call_oi": 12012,
-          "put_oi": 89878,
-          "net_gex_m": -248.05
+          "ndx_equiv": 25688,
+          "call_oi": 11871,
+          "put_oi": 86486,
+          "net_gex_m": -243.22
         },
         {
           "qqq_strike": 630,
-          "ndx_equiv": 25880,
-          "call_oi": 26055,
-          "put_oi": 89109,
-          "net_gex_m": -152.78
+          "ndx_equiv": 25894,
+          "call_oi": 25093,
+          "put_oi": 88170,
+          "net_gex_m": -261.46
         },
         {
           "qqq_strike": 635,
-          "ndx_equiv": 26086,
-          "call_oi": 25309,
-          "put_oi": 75593,
-          "net_gex_m": -102.25
+          "ndx_equiv": 26099,
+          "call_oi": 20447,
+          "put_oi": 113084,
+          "net_gex_m": -389.29
         },
         {
           "qqq_strike": 640,
-          "ndx_equiv": 26291,
-          "call_oi": 43824,
-          "put_oi": 104901,
-          "net_gex_m": -141.16
+          "ndx_equiv": 26305,
+          "call_oi": 35518,
+          "put_oi": 107768,
+          "net_gex_m": -298.91
         },
         {
           "qqq_strike": 645,
-          "ndx_equiv": 26496,
-          "call_oi": 40945,
-          "put_oi": 59389,
-          "net_gex_m": -56.36
+          "ndx_equiv": 26510,
+          "call_oi": 29487,
+          "put_oi": 59868,
+          "net_gex_m": -79.44
         },
         {
           "qqq_strike": 650,
-          "ndx_equiv": 26702,
-          "call_oi": 100594,
-          "put_oi": 116359,
-          "net_gex_m": -64.21
+          "ndx_equiv": 26716,
+          "call_oi": 80745,
+          "put_oi": 119906,
+          "net_gex_m": -77.97
         },
         {
           "qqq_strike": 655,
-          "ndx_equiv": 26907,
-          "call_oi": 64341,
-          "put_oi": 52587,
-          "net_gex_m": -8.96
+          "ndx_equiv": 26921,
+          "call_oi": 54389,
+          "put_oi": 53167,
+          "net_gex_m": 8.19
         },
         {
           "qqq_strike": 660,
-          "ndx_equiv": 27113,
-          "call_oi": 89848,
-          "put_oi": 74971,
-          "net_gex_m": 4.74
+          "ndx_equiv": 27127,
+          "call_oi": 81915,
+          "put_oi": 76879,
+          "net_gex_m": -6.66
         },
         {
           "qqq_strike": 665,
-          "ndx_equiv": 27318,
-          "call_oi": 58730,
-          "put_oi": 47852,
-          "net_gex_m": -17.78
+          "ndx_equiv": 27332,
+          "call_oi": 63025,
+          "put_oi": 52785,
+          "net_gex_m": 8.66
         },
         {
           "qqq_strike": 670,
-          "ndx_equiv": 27523,
-          "call_oi": 83472,
-          "put_oi": 38395,
-          "net_gex_m": 27.42
+          "ndx_equiv": 27538,
+          "call_oi": 65780,
+          "put_oi": 40580,
+          "net_gex_m": 54.99
         },
         {
           "qqq_strike": 675,
-          "ndx_equiv": 27729,
-          "call_oi": 86088,
-          "put_oi": 65545,
-          "net_gex_m": -6.81
+          "ndx_equiv": 27743,
+          "call_oi": 67773,
+          "put_oi": 67905,
+          "net_gex_m": -30.05
         },
         {
           "qqq_strike": 680,
-          "ndx_equiv": 27934,
-          "call_oi": 175712,
-          "put_oi": 95920,
-          "net_gex_m": 85.52
+          "ndx_equiv": 27949,
+          "call_oi": 157548,
+          "put_oi": 96548,
+          "net_gex_m": 89.29
+        },
+        {
+          "qqq_strike": 685,
+          "ndx_equiv": 28154,
+          "call_oi": 37471,
+          "put_oi": 16256,
+          "net_gex_m": 30.63
+        },
+        {
+          "qqq_strike": 690,
+          "ndx_equiv": 28360,
+          "call_oi": 114814,
+          "put_oi": 56218,
+          "net_gex_m": 65.97
+        },
+        {
+          "qqq_strike": 695,
+          "ndx_equiv": 28565,
+          "call_oi": 55178,
+          "put_oi": 24214,
+          "net_gex_m": 41.62
+        },
+        {
+          "qqq_strike": 700,
+          "ndx_equiv": 28771,
+          "call_oi": 148518,
+          "put_oi": 76758,
+          "net_gex_m": 74.68
+        },
+        {
+          "qqq_strike": 705,
+          "ndx_equiv": 28976,
+          "call_oi": 45012,
+          "put_oi": 13928,
+          "net_gex_m": 31.98
         }
       ],
       "gex_curve": [
         {
-          "qqq": 548.4,
-          "ndx": 22527,
-          "gex_m": -2279.55
+          "qqq": 570.4,
+          "ndx": 23445,
+          "gex_m": -2245.11
         },
         {
-          "qqq": 551.4,
-          "ndx": 22652,
-          "gex_m": -2374.69
+          "qqq": 573.6,
+          "ndx": 23575,
+          "gex_m": -2357.63
         },
         {
-          "qqq": 554.5,
-          "ndx": 22777,
-          "gex_m": -2466.49
+          "qqq": 576.8,
+          "ndx": 23706,
+          "gex_m": -2472.86
         },
         {
-          "qqq": 557.5,
-          "ndx": 22902,
-          "gex_m": -2554.66
+          "qqq": 579.9,
+          "ndx": 23836,
+          "gex_m": -2589.8
         },
         {
-          "qqq": 560.5,
-          "ndx": 23027,
-          "gex_m": -2639.27
+          "qqq": 583.1,
+          "ndx": 23966,
+          "gex_m": -2706.77
         },
         {
-          "qqq": 563.6,
-          "ndx": 23152,
-          "gex_m": -2720.74
+          "qqq": 586.3,
+          "ndx": 24096,
+          "gex_m": -2821.34
         },
         {
-          "qqq": 566.6,
-          "ndx": 23277,
-          "gex_m": -2799.91
+          "qqq": 589.4,
+          "ndx": 24227,
+          "gex_m": -2930.46
         },
         {
-          "qqq": 569.7,
-          "ndx": 23403,
-          "gex_m": -2878.0
+          "qqq": 592.6,
+          "ndx": 24357,
+          "gex_m": -3030.65
         },
         {
-          "qqq": 572.7,
-          "ndx": 23528,
-          "gex_m": -2956.52
+          "qqq": 595.8,
+          "ndx": 24487,
+          "gex_m": -3118.38
         },
         {
-          "qqq": 575.8,
-          "ndx": 23653,
-          "gex_m": -3037.03
+          "qqq": 599.0,
+          "ndx": 24617,
+          "gex_m": -3190.39
         },
         {
-          "qqq": 578.8,
-          "ndx": 23778,
-          "gex_m": -3121.15
+          "qqq": 602.1,
+          "ndx": 24748,
+          "gex_m": -3244.08
         },
         {
-          "qqq": 581.9,
-          "ndx": 23903,
-          "gex_m": -3210.64
+          "qqq": 605.3,
+          "ndx": 24878,
+          "gex_m": -3277.65
         },
         {
-          "qqq": 584.9,
-          "ndx": 24028,
-          "gex_m": -3307.7
+          "qqq": 608.5,
+          "ndx": 25008,
+          "gex_m": -3290.12
         },
         {
-          "qqq": 588.0,
-          "ndx": 24153,
-          "gex_m": -3414.68
+          "qqq": 611.6,
+          "ndx": 25138,
+          "gex_m": -3281.09
         },
         {
-          "qqq": 591.0,
-          "ndx": 24279,
-          "gex_m": -3532.64
+          "qqq": 614.8,
+          "ndx": 25269,
+          "gex_m": -3250.3
         },
         {
-          "qqq": 594.1,
-          "ndx": 24404,
-          "gex_m": -3658.41
+          "qqq": 618.0,
+          "ndx": 25399,
+          "gex_m": -3197.08
         },
         {
-          "qqq": 597.1,
-          "ndx": 24529,
-          "gex_m": -3781.79
+          "qqq": 621.1,
+          "ndx": 25529,
+          "gex_m": -3119.83
         },
         {
-          "qqq": 600.2,
-          "ndx": 24654,
-          "gex_m": -3886.01
+          "qqq": 624.3,
+          "ndx": 25659,
+          "gex_m": -3015.9
         },
         {
-          "qqq": 603.2,
-          "ndx": 24779,
-          "gex_m": -3953.48
-        },
-        {
-          "qqq": 606.2,
-          "ndx": 24904,
-          "gex_m": -3974.62
-        },
-        {
-          "qqq": 609.3,
-          "ndx": 25030,
-          "gex_m": -3952.54
-        },
-        {
-          "qqq": 612.3,
-          "ndx": 25155,
-          "gex_m": -3896.45
-        },
-        {
-          "qqq": 615.4,
-          "ndx": 25280,
-          "gex_m": -3810.16
-        },
-        {
-          "qqq": 618.4,
-          "ndx": 25405,
-          "gex_m": -3692.02
-        },
-        {
-          "qqq": 621.5,
-          "ndx": 25530,
-          "gex_m": -3544.85
-        },
-        {
-          "qqq": 624.5,
-          "ndx": 25655,
-          "gex_m": -3375.0
-        },
-        {
-          "qqq": 627.6,
-          "ndx": 25780,
-          "gex_m": -3181.08
+          "qqq": 627.5,
+          "ndx": 25790,
+          "gex_m": -2881.71
         },
         {
           "qqq": 630.6,
-          "ndx": 25906,
-          "gex_m": -2952.94
+          "ndx": 25920,
+          "gex_m": -2713.57
         },
         {
-          "qqq": 633.7,
-          "ndx": 26031,
-          "gex_m": -2682.42
+          "qqq": 633.8,
+          "ndx": 26050,
+          "gex_m": -2508.8
         },
         {
-          "qqq": 636.7,
-          "ndx": 26156,
-          "gex_m": -2372.15
+          "qqq": 637.0,
+          "ndx": 26180,
+          "gex_m": -2267.08
         },
         {
-          "qqq": 639.8,
-          "ndx": 26281,
-          "gex_m": -2035.89
+          "qqq": 640.1,
+          "ndx": 26311,
+          "gex_m": -1991.48
         },
         {
-          "qqq": 642.8,
-          "ndx": 26406,
-          "gex_m": -1692.77
+          "qqq": 643.3,
+          "ndx": 26441,
+          "gex_m": -1688.98
         },
         {
-          "qqq": 645.8,
-          "ndx": 26531,
-          "gex_m": -1360.14
+          "qqq": 646.5,
+          "ndx": 26571,
+          "gex_m": -1369.98
         },
         {
-          "qqq": 648.9,
-          "ndx": 26656,
-          "gex_m": -1048.88
+          "qqq": 649.7,
+          "ndx": 26701,
+          "gex_m": -1047.1
         },
         {
-          "qqq": 651.9,
-          "ndx": 26782,
-          "gex_m": -763.27
+          "qqq": 652.8,
+          "ndx": 26832,
+          "gex_m": -733.32
         },
         {
-          "qqq": 655.0,
-          "ndx": 26907,
-          "gex_m": -504.21
+          "qqq": 656.0,
+          "ndx": 26962,
+          "gex_m": -440.08
         },
         {
-          "qqq": 658.0,
-          "ndx": 27032,
-          "gex_m": -272.68
+          "qqq": 659.2,
+          "ndx": 27092,
+          "gex_m": -175.74
         },
         {
-          "qqq": 661.1,
-          "ndx": 27157,
-          "gex_m": -71.21
+          "qqq": 662.3,
+          "ndx": 27222,
+          "gex_m": 55.18
         },
         {
-          "qqq": 664.1,
-          "ndx": 27282,
-          "gex_m": 97.15
+          "qqq": 665.5,
+          "ndx": 27353,
+          "gex_m": 251.97
         },
         {
-          "qqq": 667.2,
-          "ndx": 27407,
-          "gex_m": 230.69
+          "qqq": 668.7,
+          "ndx": 27483,
+          "gex_m": 416.99
         },
         {
-          "qqq": 670.2,
-          "ndx": 27532,
-          "gex_m": 330.12
+          "qqq": 671.8,
+          "ndx": 27613,
+          "gex_m": 554.45
+        },
+        {
+          "qqq": 675.0,
+          "ndx": 27743,
+          "gex_m": 669.18
+        },
+        {
+          "qqq": 678.2,
+          "ndx": 27874,
+          "gex_m": 765.66
+        },
+        {
+          "qqq": 681.3,
+          "ndx": 28004,
+          "gex_m": 847.37
+        },
+        {
+          "qqq": 684.5,
+          "ndx": 28134,
+          "gex_m": 916.63
+        },
+        {
+          "qqq": 687.7,
+          "ndx": 28264,
+          "gex_m": 974.75
+        },
+        {
+          "qqq": 690.9,
+          "ndx": 28395,
+          "gex_m": 1022.39
+        },
+        {
+          "qqq": 694.0,
+          "ndx": 28525,
+          "gex_m": 1059.9
+        },
+        {
+          "qqq": 697.2,
+          "ndx": 28655,
+          "gex_m": 1087.66
         }
       ]
     },
@@ -12958,9 +13080,26 @@
     }
   },
   "analysis": {
-    "overall_risk_score": 96,
+    "overall_risk_score": 97,
+    "regime_code": "DEFENSIVE_BOUNCE",
+    "gamma_state": "NEGATIVE_CONFIRMED",
+    "sofr_corridor_state": "STRESS_CONFIRMED",
+    "hysteresis": {
+      "in_buffer": false,
+      "active_buffers": [],
+      "regime_code": "DEFENSIVE_BOUNCE",
+      "regime_hysteresis_held": false,
+      "gamma_state": "NEGATIVE_CONFIRMED",
+      "gamma_band_ndx": [
+        26986,
+        27394
+      ],
+      "sofr_corridor_state": "STRESS_CONFIRMED",
+      "sofr_days_above_zero": 4,
+      "sofr_note": "连续 4 个交易日突破走廊上限（水管吃紧红灯确认）"
+    },
     "headline": "防守反击期：「不是钱没了，是钱贵了」· 美股AI周期顶反抽减杠杆，黄金逢洗盘分批吸纳",
-    "summary_verdict": "当前核心矛盾并非全面回购崩盘（SOFR-IORB +4.0bps），而是高利率下的边缘信用爆破（CCC级借钱成本 18.7%）叠加 AI 云巨头现金流转负（4/5 家 FCF 为负）。纳指在 ~27,207 下方处于负 Gamma 放大区间，突发利好推升的暴涨定性为做市商被动回补的「反抽」而非周期反转。下方真正期权厚防线在纳指 ~24,648（QQQ $600），同时紧盯 2026-11-30 月末与 2026-12-31 年末资金面大考；黄金回调属于「钱荒洗金打折期」。",
+    "summary_verdict": "当前核心矛盾并非全面回购崩盘（SOFR-IORB +4.0bps，MOVE 97.5），而是高利率下的边缘信用爆破（CCC级借钱成本 18.7%）叠加 AI 云巨头现金流转负（4/5 家 FCF 为负）。纳指在 ~27,190 下方处于负 Gamma 放大区间，突发利好推升定性为「反抽」而非反转；下方真正期权厚防线在纳指 ~24,661（QQQ $600），紧盯 2026-11-30 月末结算大考；黄金回调属于「钱荒洗金打折期」。",
     "money_diagnosis": "不是钱没了，是钱贵了（边缘信用定向爆破）",
     "is_dead_cat_bounce": false,
     "is_gold_discount": true,
@@ -12969,46 +13108,51 @@
         "domain": "美股大盘与期权微结构",
         "freq_badge": "盘中实时",
         "level": "danger",
-        "live_data": "纳指100 报 25,030（1日 -4.52%，5日 -7.70%） | 翻转线 ~27,207 | 最厚 Put 防线 ~24,648 (QQQ $600)",
-        "consequence": "现价低于正负 Gamma 翻转线 2,177 点，做市商处于「负 Gamma 追涨杀跌」区间，导致消息刺激脉冲极易回吐、下跌波动被机械放大；整数关口 25,000 筹码单薄难成有效支撑。",
-        "conclusion": "定性「反抽非反转」：不追涨，趁急拉降杠杆/买保护；下方真正支撑看 ~24,648（QQQ $600），重新站稳 ~27,207 前保持防守。"
+        "in_buffer": false,
+        "live_data": "纳指100 报 26,050（1日 -0.63%） | 翻转线 ~27,190 (缓冲带 26,986~27,394) | 厚防线 ~24,661 (QQQ $600)",
+        "consequence": "现价已跌破翻转线缓冲下沿（<26,986），确认处于「负 Gamma 追涨杀跌」区间，消息脉冲极易回吐、下跌波动机械放大；整数关口 26,000 筹码单薄难成有效支撑。",
+        "conclusion": "定性「反抽非反转」：不追涨，趁急拉降杠杆；下方真正支撑看 ~24,661（QQQ $600），站稳 ~27,394 前保持防守。"
       },
       {
         "domain": "黄金实时买点判别",
         "freq_badge": "盘中实时",
         "level": "opportunity",
-        "live_data": "COMEX 黄金 $3,477.4（1日 -2.37%，高点回撤 -34.6%） | 日线 RSI(14)=18.6 | 50日线 $4,063",
-        "consequence": "在回购缓冲垫归零（RRP $0.30B）与高波动压力下，机构被动卖出高流动性黄金补保证金，将金价砸入极端超卖区（RSI 19），形成流动性错杀折价。",
-        "conclusion": "处于「打折期」：严禁加杠杆抄底，宜用现金分批逢低吸纳；一旦月末后资金缓解或站回 $4,063 将率先领涨。"
+        "in_buffer": false,
+        "live_data": "COMEX 黄金 $3,614.9（1日 +1.49%，高点回撤 -32.0%） | 日线 RSI(14)=24.6 | 50日线 $4,066",
+        "consequence": "在回购缓冲垫归零（RRP $0.30B）与高波动压力下，机构被动卖出高流动性黄金补保证金，将金价砸入超卖折价区（RSI 25）。",
+        "conclusion": "处于「打折期」：严禁加杠杆抄底，宜用现金分批逢低吸纳；一旦月末后资金缓解或站回 $4,066 将率先领涨。"
       },
       {
         "domain": "AI 产业链内部分化与排雷",
         "freq_badge": "盘中实时 + 日更利差",
         "level": "danger",
-        "live_data": "NVDA $141.72 (-8.8%) | CoreWeave $37.74 (-11.4%) | Anthropic $79.41 (较IPO -4.3%) | CCC利率 18.66%",
+        "in_buffer": false,
+        "live_data": "NVDA $149.29 (-3.9%) | CoreWeave $42.54 (-0.1%) | Anthropic $82.79 (较IPO -0.3%) | CCC利率 18.66%",
         "consequence": "高达 18.7% 的垃圾债融资成本正按资产负债表质量从下往上爆破：依赖外部举债的二线算力（CRWV）与抽血型次新（ANT）率先失血下挫，龙头独木难支。",
         "conclusion": "结构排雷：坚决规避高负债二线算力租赁与破发次新股，严禁马丁格尔补仓；仅保留现金流健康的极少数核心环节。"
       },
       {
-        "domain": "美元回购水管与现金仓位",
-        "freq_badge": "FRED 日更",
-        "level": "warning",
-        "live_data": "SOFR-IORB 利差 +4.0 bps | ON RRP $0.30B | 3M短债 4.37% vs 10Y美债 4.92% | 距月末结算 3 交易日",
-        "consequence": "逆回购已耗尽，回购利率贴着走廊上限运行但尚未全面爆裂（「不是钱没了，是钱贵了」），美联储在管道真炸前不会降息救股市；月末结算日将迎来流动性压力峰值。",
-        "conclusion": "超配 ~4.37% 短端美债现金（SHV/T-Bills）收息并留足干火药；紧盯 2026-11-30 前后 SOFR 是否异动跳升。"
+        "domain": "美元回购水管与 MOVE 前置预警",
+        "freq_badge": "FRED 日更 + MOVE",
+        "level": "danger",
+        "in_buffer": false,
+        "live_data": "SOFR-IORB +4.0 bps (连破 4 日) | MOVE 97.5 (20日 -0.3, 分位 84%) | RRP $0.30B | 距月末结算 3 交易日",
+        "consequence": "SOFR 连续多日或大幅击穿走廊上限，隔夜回购管道实质吃紧（红灯确认），短期触发跨资产砍仓但也将倒逼美联储出手修管道！",
+        "conclusion": "超配 ~4.36% 短端美债现金（SHV/T-Bills）收息留足干火药；紧盯 MOVE 异动与 2026-11-30 月末结算。"
       }
     ],
     "pillars": {
       "plumbing": {
         "title": "美元水管与结算节点",
-        "score": 84,
-        "status": "缓冲垫归零 · 紧绷未炸（盯死月末/年末结算）",
-        "level": "warning",
+        "score": 87,
+        "status": "连续 4 日破走廊 · 水管吃紧确认（红灯）",
+        "level": "danger",
+        "in_buffer": false,
         "findings": [
-          "SOFR (3.94%) 较 IORB (3.90%) 利差为 +4.0 bps —— 已突破走廊上限呈轻微倒挂，回购融资边际吃紧但尚未失控。",
+          "SOFR (3.94%) 较 IORB (3.90%) 利差为 +4.0 bps（连续 4 个交易日突破走廊上限（水管吃紧红灯确认））。",
+          "前置预警指标 MOVE 美债波动率报 97.5（20日变化 -0.3 点，1年分位 84%）：美债做市商资产负债表抽紧时 MOVE 常领先于隔夜回购利率异动，是「联储被迫修管道」的前置风向标。",
           "隔夜逆回购 ON RRP 仅剩 $0.30B（近乎彻底归零），银行准备金 $2.98T 已跌破 $3.0T 稀缺警戒线，任何边际抽水都会直接冲击准备金。",
-          "财政部账户 TGA 高达 $917B（近4周净流动性变化 +79B，当前净流动性 $5.83T）：短期形成巨额抽水，但也意味着未来一旦 TGA 放水将成为黄金与流动性敏感资产的强力燃料。",
-          "结算日历大考：距月末（2026-11-30）仅剩 3 个交易日，距年末（2026-12-31）26 个交易日 —— 一级交易商资产负债表考核窗口是检验管道成色的真正试金石。"
+          "财政部账户 TGA 高达 $917B（近4周净流动性变化 +79B，当前净流动性 $5.83T）；距月末结算（2026-11-30）3 个交易日，距年末 26 个交易日。"
         ]
       },
       "credit": {
@@ -13016,10 +13160,11 @@
         "score": 100,
         "status": "不是钱没了，是钱贵了（边缘信用定向爆破）",
         "level": "danger",
+        "in_buffer": false,
         "findings": [
           "CCC级及以下垃圾债有效收益率飙至 18.66%（OAS 14.05%），而投资级利差仅 0.98%、整体高收益利差 3.72%。",
           "信用撕裂比（CCC / HY OAS）高达 3.78x（CCC / IG 达 14.3x）：典型的「底层烂债先炸」，二线高杠杆算力债与垃圾债已处违约重定价区，而表层大盘尚未完全计价。",
-          "无风险资金依然昂贵：10Y美债 4.92%、2Y美债 4.63%，10Y TIPS 实际利率高达 2.79%（通胀预期 2.12%）。",
+          "无风险资金依然昂贵：10Y美债 4.91%、2Y美债 4.63%，10Y TIPS 实际利率高达 2.79%（通胀预期 2.12%）。",
           "联储反应函数判定：只要回购管道未全面爆裂、IG利差未失控，美联储「只认管道不认股价」，不会因高估值科技股回调而轻易转向降息。"
         ],
         "ccc_hy_ratio": 3.78,
@@ -13028,20 +13173,22 @@
       "microstructure": {
         "title": "波动率剪刀差与期权Gamma",
         "score": 100,
-        "status": "负Gamma双向放大模式 · 紧盯下方Put Wall防线",
+        "status": "负Gamma双向放大确认 · 紧盯下方Put Wall防线",
         "level": "warning",
+        "in_buffer": false,
         "findings": [
-          "Gamma 状态：纳指100现价 25,030 位于正负 Gamma 翻转线（~27,207）下方，处于【负 Gamma 区间】—— 做市商被迫追涨杀跌，利好消息易触发空头+做市商对冲脉冲（暴力反抽），下跌时同样加速助跌。",
-          "真实期权防线 vs 整数幻觉：多头最厚实值/虚值看跌期权墙在 QQQ $600（对应纳指 ~24,648 点，未平仓 120,897 张），筹码厚度约为纳指 25,000 整数位附近的 1.5 倍；近端第一支撑在 QQQ $550（~22,594），上方最大阻力墙在 QQQ $680（~27,934）。",
-          "跨资产波动率：美债 MOVE 100.7（1年分位 90%） vs 纳指 VXN 36.4（1年分位 99%），VIX 33.5，剪刀差 -9 个百分位点。"
+          "Gamma 状态：纳指100现价 26,050 位于 0–45 DTE 翻转线（~27,190，缓冲带 26,986~27,394）下方且已过缓冲确认，处于【负 Gamma 区间】—— 做市商被迫追涨杀跌，利好脉冲极易回吐、下跌波动机械放大。",
+          "真实期权防线 vs 整数幻觉：多头最厚看跌期权墙在 QQQ $600（对应纳指 ~24,661 点，未平仓 122,314 张），筹码厚度约为纳指 25,000 整数位附近的 21.9 倍；近端支撑在 QQQ $580（~23,839），上方最大阻力墙在 QQQ $700（~28,771）。",
+          "跨资产波动率：美债 MOVE 97.5（20日 -0.3 点，1年分位 84%） vs 纳指 VXN 36.4（1年分位 99%），VIX 28.3，剪刀差 -15 个百分位点。"
         ],
-        "vol_scissors": -9.2
+        "vol_scissors": -14.9
       },
       "ai_ledger": {
         "title": "AI算力账本与见顶审计",
         "score": 100,
         "status": "周期见顶信号齐亮（5/5 触发 · 反抽宜降杠杆排雷）",
         "level": "danger",
+        "in_buffer": false,
         "peak_signals": [
           {
             "name": "云巨头自由现金流转负",
@@ -13056,17 +13203,17 @@
           {
             "name": "超级IPO山顶抽血与破发检验",
             "triggered": true,
-            "detail": "Anthropic (ANT) 现价 $79.41，较 $83 发行价 -4.33%（已破发）"
+            "detail": "Anthropic (ANT) 现价 $82.79，较 $83 发行价 -0.26%（已破发）"
           },
           {
             "name": "二线算力与高息债脆弱端领跌",
             "triggered": true,
-            "detail": "CoreWeave (CRWV) 现价 $37.74（单日 -11.4%，距高点 -72.7%）叠加 CCC 利率 18.7%"
+            "detail": "CoreWeave (CRWV) 现价 $42.54（单日 -0.1%，距高点 -69.2%）叠加 CCC 利率 18.7%"
           },
           {
             "name": "核心芯片龙头反抽后动能分化",
             "triggered": true,
-            "detail": "NVDA $141.72（单日 -8.8%，50日线 $203.5）；AVGO $281.52"
+            "detail": "NVDA $149.29（单日 -3.9%，50日线 $203.7）；AVGO $300.49"
           }
         ],
         "triggered_count": 5
@@ -13076,12 +13223,13 @@
         "score": 92,
         "status": "康波钱荒洗金 · 黄金处于「打折期」（分批布局窗口）",
         "level": "opportunity",
+        "in_buffer": false,
         "findings": [
-          "COMEX 黄金现价 $3,477.4，距52周高点（$5,318）回撤 -34.6%，RSI(14)=18.6，200日均线 $4,423。",
+          "COMEX 黄金现价 $3,614.9，距52周高点（$5,318）回撤 -32.0%，RSI(14)=24.6，200日均线 $4,423。",
           "「打折期」机制触发：金价回撤主因是对冲基金在回购紧绷与高波动中被动砍仓换取美元流动性（「砍仓先砍最好卖的」），而非40万亿美债财政主导逻辑逆转；一旦月末/年末后 TGA 放水或联储被迫修补回购管道，黄金将先于美股修复。",
-          "中国与亚太外溢参照：离岸人民币 USD/CNH 报 6.671，FXI 20日涨跌 -5.9%（KWEB -10.9%），韩国 KOSPI 距高点 -48.4%，铜金比(×1000)=1.536 —— 需警惕美国 AI 资本开支见顶对中国硬件出口链的外溢拖累，以及国内信用重定价下的「红利央票 vs 题材彩票」极端分化。"
+          "中国与亚太外溢参照：离岸人民币 USD/CNH 报 6.666，FXI 20日涨跌 -3.6%（KWEB -7.8%），韩国 KOSPI 距高点 -48.4%，铜金比(×1000)=1.516 —— 需警惕美国 AI 资本开支见顶对中国硬件出口链的外溢拖累，以及国内信用重定价下的「红利央票 vs 题材彩票」极端分化。"
         ],
-        "cu_au_ratio": 1.536
+        "cu_au_ratio": 1.516
       }
     },
     "allocation_cards": [
@@ -13089,15 +13237,15 @@
         "asset": "黄金 (GC=F / GLD)",
         "stance": "逢低分批吸纳（打折期）",
         "signal_tag": "首选配置",
-        "rationale": "现价 $3,477（高点回撤 -34.6%）。在 $40T 美债与高 TGA（$917B）背景下，因机构补保证金引发的金价回撤属于「1976式钱荒洗盘」。不加杠杆、利用回调分批建仓；若月末/年末管道吃紧倒逼联储修管道，黄金将最先领涨。",
-        "trigger": "右侧确认信号：SOFR回落 + TGA余额开始下行，或金价放量站回50日线（$4,063）"
+        "rationale": "现价 $3,615（高点回撤 -32.0%）。在 $40T 美债与高 TGA（$917B）背景下，因机构补保证金引发的金价回撤属于「1976式钱荒洗盘」。不加杠杆、利用回调分批建仓；若月末/年末管道吃紧倒逼联储修管道，黄金将最先领涨。",
+        "trigger": "右侧确认信号：SOFR回落 + TGA余额开始下行，或金价放量站回50日线（$4,066）"
       },
       {
         "asset": "美股宽基与纳指 (QQQ / ^NDX)",
         "stance": "反抽降杠杆 · 盯防线不追高",
         "signal_tag": "谨慎防守",
-        "rationale": "现价 25,030 处于负 Gamma 区（翻转线 ~27,207）。联储只认管道不认股价，在 10Y 实际利率 2.79% 环境下，暴涨宜视为减仓/对冲窗口而非追涨信号。整数位 25,000 保护极薄，真正筹码防线看 ~24,648（QQQ $600）。",
-        "trigger": "转多条件：重新站稳正Gamma线 ~27,207 且 CCC 利差拐头收敛；破位警戒：有效跌穿 ~24,648"
+        "rationale": "现价 26,050（0–45DTE 翻转线 ~27,190，滞回缓冲带 26,986~27,394）。联储只认管道不认股价，在 10Y 实际利率 2.79% 环境下，暴涨宜视为减仓/对冲窗口而非追涨信号。整数位 25,000 保护极薄，真正筹码防线看 ~24,661（QQQ $600）。",
+        "trigger": "转多确认：站稳缓冲带上沿 ~27,394 满30分钟/收盘且 CCC 利差收敛；破位警戒：有效跌穿 ~24,661"
       },
       {
         "asset": "AI 产业链内部结构 (NVDA / AVGO vs ANT / CRWV)",
@@ -13108,22 +13256,22 @@
       },
       {
         "asset": "美元短债现金 vs 长端美债 (SHV/T-Bills vs TLT)",
-        "stance": "超配短端高息现金（~4.37%）· 长债等MOVE回落",
+        "stance": "超配短端高息现金（~4.36%）· 长债紧盯MOVE回落",
         "signal_tag": "流动性压舱石",
-        "rationale": "3个月美债提供约 4.37% 无久期风险收益，既能规避 10Y 美债（4.92%）的财政供给与通胀粘性波动，又能在 11/30、12/31 结算大考若砸出黄金坑时充当随时出击的「干火药」。",
+        "rationale": "3个月美债提供约 4.36% 无久期风险收益，既能规避 10Y 美债（4.91%）与 MOVE（97.5）波动，又能在月末、年末结算大考若砸出黄金坑时充当随时出击的「干火药」。",
         "trigger": "长债(TLT)右侧信号：MOVE指数回落至 85 以下且就业/通胀实质降温"
       }
     ]
   },
   "scheduler": {
-    "evaluated_at_utc": "2026-11-25T16:17:30Z",
-    "evaluated_at_et": "2026-11-25 11:17 ET",
-    "mode_code": "SETTLEMENT_HIGH_ALERT",
-    "mode_label": "结算大考 / 期权交割周加密巡检",
-    "mode_reason": "距月末回购结算仅 3 个交易日，一级交易商缩表窗口期盘中加密监控",
-    "interval_minutes": 20,
-    "interval_seconds": 1200,
-    "visit_stale_seconds": 300,
+    "evaluated_at_utc": "2026-11-25T21:38:59Z",
+    "evaluated_at_et": "2026-11-25 16:38 ET",
+    "mode_code": "PLUMBING_FIXING",
+    "mode_label": "美元水管官方数据放榜窗口",
+    "mode_reason": "纽约联储 SOFR (08:05) / ON RRP (13:20) / FRED 信用利差与 H.4.1 资产负债表更新时段",
+    "interval_minutes": 12,
+    "interval_seconds": 720,
+    "visit_stale_seconds": 240,
     "in_settlement_danger": true,
     "is_opex_week": false,
     "active_window_tags": [
@@ -13131,27 +13279,11 @@
     ],
     "upcoming_checkpoints": [
       {
-        "title": "纽约联储 ON RRP 逆回购操作结果",
-        "purpose": "监测隔夜逆回购缓冲垫抽水/回流",
-        "time_et": "11-25 13:20 ET",
-        "time_utc": "2026-11-25T18:20:00Z",
-        "minutes_away": 122,
-        "kind": "intraday"
-      },
-      {
-        "title": "美股尾盘 MOC 与 0DTE 结算窗口",
-        "purpose": "全天衍生品杠杆集中再平衡高危时段",
-        "time_et": "11-25 15:30 ET",
-        "time_utc": "2026-11-25T20:30:00Z",
-        "minutes_away": 252,
-        "kind": "intraday"
-      },
-      {
         "title": "FRED 每日信用利差与实际利率更新",
         "purpose": "核查 CCC级垃圾债收益率(~18%)与 10Y TIPS",
         "time_et": "11-25 17:15 ET",
         "time_utc": "2026-11-25T22:15:00Z",
-        "minutes_away": 357,
+        "minutes_away": 36,
         "kind": "intraday"
       },
       {
@@ -13159,7 +13291,7 @@
         "purpose": "检验 SOFR-IORB 是否倒挂突破走廊",
         "time_et": "11-26 08:05 ET",
         "time_utc": "2026-11-26T13:05:00Z",
-        "minutes_away": 1247,
+        "minutes_away": 926,
         "kind": "intraday"
       },
       {
@@ -13167,7 +13299,23 @@
         "purpose": "观察做市商开盘追涨杀跌方向与期权墙得失",
         "time_et": "11-26 09:30 ET",
         "time_utc": "2026-11-26T14:30:00Z",
-        "minutes_away": 1332,
+        "minutes_away": 1011,
+        "kind": "intraday"
+      },
+      {
+        "title": "纽约联储 ON RRP 逆回购操作结果",
+        "purpose": "监测隔夜逆回购缓冲垫抽水/回流",
+        "time_et": "11-26 13:20 ET",
+        "time_utc": "2026-11-26T18:20:00Z",
+        "minutes_away": 1241,
+        "kind": "intraday"
+      },
+      {
+        "title": "美股尾盘 MOC 与 0DTE 结算窗口",
+        "purpose": "全天衍生品杠杆集中再平衡高危时段",
+        "time_et": "11-26 15:30 ET",
+        "time_utc": "2026-11-26T20:30:00Z",
+        "minutes_away": 1371,
         "kind": "intraday"
       },
       {
@@ -13175,7 +13323,7 @@
         "purpose": "「11月30日见真章」：检验无RRP缓冲下回购利率是否跳升",
         "time_et": "2026-11-30 (结算日)",
         "time_utc": "2026-11-30T21:00:00Z",
-        "minutes_away": 7482,
+        "minutes_away": 7161,
         "kind": "structural"
       },
       {
@@ -13183,7 +13331,7 @@
         "purpose": "大量 Put/Call 未平仓到期脱钩，正负 Gamma 翻转重设",
         "time_et": "2026-12-18 (结算日)",
         "time_utc": "2026-12-18T21:00:00Z",
-        "minutes_away": 33402,
+        "minutes_away": 33081,
         "kind": "structural"
       },
       {
@@ -13191,11 +13339,12 @@
         "purpose": "「12月31日见真章」：全年流动性管道最紧节点",
         "time_et": "2026-12-31 (结算日)",
         "time_utc": "2026-12-31T21:00:00Z",
-        "minutes_away": 52122,
+        "minutes_away": 51801,
         "kind": "structural"
       }
     ]
   },
-  "trigger_source": "intraday_live",
-  "run_id": 6
+  "fallback_cached": false,
+  "trigger_source": "v2_p0_p2_verified",
+  "run_id": 8
 }
