@@ -1,6 +1,38 @@
 {
   "runs": [
     {
+      "id": 6,
+      "collected_at_utc": "2026-11-25T16:17:30Z",
+      "trigger_source": "intraday_live",
+      "overall_risk_score": 96,
+      "plumbing_score": 84,
+      "credit_score": 100,
+      "micro_score": 100,
+      "ai_score": 100,
+      "gold_opp_score": 92,
+      "headline": "防守反击期：「不是钱没了，是钱贵了」· 美股AI周期顶反抽减杠杆，黄金逢洗盘分批吸纳",
+      "ndx_spot": 25029.52,
+      "gold_spot": 3477.4,
+      "sofr_iorb_bps": 4.0,
+      "ccc_yield": 18.66
+    },
+    {
+      "id": 5,
+      "collected_at_utc": "2026-11-25T16:16:23Z",
+      "trigger_source": "intraday_live",
+      "overall_risk_score": 96,
+      "plumbing_score": 84,
+      "credit_score": 100,
+      "micro_score": 100,
+      "ai_score": 100,
+      "gold_opp_score": 92,
+      "headline": "防守反击期：「不是钱没了，是钱贵了」· 美股AI周期顶反抽减杠杆，黄金逢洗盘分批吸纳",
+      "ndx_spot": 25034.4,
+      "gold_spot": 3479.9,
+      "sofr_iorb_bps": 4.0,
+      "ccc_yield": 18.66
+    },
+    {
       "id": 4,
       "collected_at_utc": "2026-11-25T05:23:53Z",
       "trigger_source": "fix_verify",

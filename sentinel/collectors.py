@@ -205,19 +205,23 @@ def collect_market_quotes() -> dict[str, Any]:
         try:
             tk = yf.Ticker(sym)
             hist = tk.history(period="1y", interval="1d", auto_adjust=False)
-            closes = hist["Close"].dropna() if not hist.empty and "Close" in hist else pd.Series(dtype=float)
+            raw_closes = hist["Close"].dropna() if not hist.empty and "Close" in hist else pd.Series(dtype=float)
+            if not raw_closes.empty:
+                norm_idx = pd.to_datetime([ts.tz_localize(None).normalize() if getattr(ts, "tzinfo", None) else pd.Timestamp(ts).normalize() for ts in raw_closes.index])
+                closes = pd.Series(raw_closes.values, index=norm_idx)
+                closes = closes[~closes.index.duplicated(keep="last")].sort_index()
+            else:
+                closes = pd.Series(dtype=float)
 
-            # Check if latest trading day close was NaN in daily feed; supplement with 1h bar
-            last_daily_dt = closes.index[-1].tz_localize(None).normalize() if not closes.empty else None
+            # Always overlay latest 5-minute real-time intraday bar onto its trading date
             try:
-                h1 = tk.history(period="5d", interval="1h", auto_adjust=False)
-                if not h1.empty and "Close" in h1 and not h1["Close"].dropna().empty:
-                    c1 = h1["Close"].dropna()
-                    latest_1h_ts = c1.index[-1]
-                    latest_1h_day = latest_1h_ts.tz_localize(None).normalize()
-                    latest_1h_px = float(c1.iloc[-1])
-                    if last_daily_dt is None or latest_1h_day > last_daily_dt:
-                        closes.loc[latest_1h_ts] = latest_1h_px
+                m5 = tk.history(period="2d", interval="5m", auto_adjust=False)
+                if not m5.empty and "Close" in m5 and not m5["Close"].dropna().empty:
+                    c5 = m5["Close"].dropna()
+                    latest_ts = c5.index[-1]
+                    latest_day = latest_ts.tz_localize(None).normalize() if getattr(latest_ts, "tzinfo", None) else pd.Timestamp(latest_ts).normalize()
+                    closes.loc[latest_day] = float(c5.iloc[-1])
+                    closes = closes.sort_index()
             except Exception:
                 pass
 
@@ -367,23 +371,24 @@ def collect_options_microstructure(qqq_spot: float, ndx_spot: float, risk_free_r
         puts_by_k = opt[opt["type"] == "put"].groupby("strike")["openInterest"].sum()
         gex_by_k = opt.groupby("strike")["gex_m"].sum()
 
-        # Put Walls below spot: immediate support (-5% to -0.3%) vs structural major wall (-11% to -2.5%)
-        near_puts = puts_by_k[(puts_by_k.index <= qqq_spot * 0.997) & (puts_by_k.index >= qqq_spot * 0.95)].sort_values(ascending=False)
-        deep_otm_puts = puts_by_k[(puts_by_k.index <= qqq_spot * 0.975) & (puts_by_k.index >= qqq_spot * 0.89)].sort_values(ascending=False)
+        # Primary OTM Put Wall within [-8%, -0.2%] below spot (stays active right as spot tests it)
+        otm_puts_main = puts_by_k[(puts_by_k.index <= qqq_spot * 0.998) & (puts_by_k.index >= qqq_spot * 0.92)].sort_values(ascending=False)
+        all_below_puts = puts_by_k[(puts_by_k.index <= qqq_spot * 0.998) & (puts_by_k.index >= qqq_spot * 0.88)].sort_values(ascending=False)
         otm_calls = calls_by_k[calls_by_k.index >= qqq_spot * 1.005].sort_values(ascending=False)
 
-        major_put_wall_qqq = float(deep_otm_puts.index[0]) if not deep_otm_puts.empty else float(near_puts.index[0])
-        major_put_wall_oi = int(deep_otm_puts.iloc[0]) if not deep_otm_puts.empty else int(near_puts.iloc[0])
-        near_put_support_qqq = float(near_puts.index[0]) if not near_puts.empty else qqq_spot * 0.98
-        near_put_support_oi = int(near_puts.iloc[0]) if not near_puts.empty else 0
+        major_put_wall_qqq = float(otm_puts_main.index[0]) if not otm_puts_main.empty else float(all_below_puts.index[0])
+        major_put_wall_oi = int(otm_puts_main.iloc[0]) if not otm_puts_main.empty else int(all_below_puts.iloc[0])
+
+        secondary_puts = puts_by_k[(puts_by_k.index < major_put_wall_qqq) & (puts_by_k.index >= qqq_spot * 0.88)].sort_values(ascending=False)
+        near_put_support_qqq = float(secondary_puts.index[0]) if not secondary_puts.empty else major_put_wall_qqq * 0.97
+        near_put_support_oi = int(secondary_puts.iloc[0]) if not secondary_puts.empty else 0
 
         major_call_wall_qqq = float(otm_calls.index[0]) if not otm_calls.empty else qqq_spot * 1.05
         major_call_wall_oi = int(otm_calls.iloc[0]) if not otm_calls.empty else 0
 
-        # Dynamically pick the psychological round-1000 NDX level between spot and major put wall
-        psych_round_ndx = int(np.floor((ndx_spot * 0.99) / 1000.0) * 1000)
-        if abs(psych_round_ndx - round(major_put_wall_qqq * ratio)) < 250 and psych_round_ndx - 1000 > major_put_wall_qqq * ratio:
-            psych_round_ndx -= 1000
+        # Dynamically pick the nearest psychological round-1000 NDX level at or below spot
+        nearest_1k = int(round(ndx_spot / 1000.0) * 1000)
+        psych_round_ndx = nearest_1k if abs(ndx_spot - nearest_1k) <= 350 else int(np.floor(ndx_spot / 1000.0) * 1000)
         k_psych_qqq = round(psych_round_ndx / ratio)
         oi_near_psych = int(puts_by_k.get(float(k_psych_qqq), 0) + puts_by_k.get(float(k_psych_qqq + 1), 0))
 

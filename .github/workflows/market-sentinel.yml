@@ -10,22 +10,10 @@ on:
         required: false
         default: "mobile_manual_dispatch"
   schedule:
-    # 1. 美元水管放榜时刻 (EST = UTC-5):
-    #    08:10 ET (SOFR 放榜后)、13:25 ET (ON RRP 逆回购结果后)、17:25 ET (FRED 信用利差 & 周四 H.4.1 更新后)
-    - cron: "10 13 * * 1-5"
-    - cron: "25 18 * * 1-5"
-    - cron: "25 22 * * 1-5"
-    # 2. 美股开盘与尾盘负 Gamma 脉冲窗口:
-    #    09:35 ET、10:10 ET (开盘对冲潮) 与 15:35 ET、16:10 ET (尾盘 MOC / 0DTE 结算) + 12:00 ET 午盘
-    - cron: "35 14 * * 1-5"
-    - cron: "10 15 * * 1-5"
-    - cron: "0 17 * * 1-5"
-    - cron: "35 20 * * 1-5"
-    - cron: "10 21 * * 1-5"
-    # 3. 亚欧盘夜间黄金与离岸汇率巡检 (北京时间上午/下午/傍晚):
+    # 美东 08:00 - 17:40 ET (覆盖 SOFR 放榜、美股全天盘中、ON RRP 结果与盘后 FRED 更新)：每 20 分钟自动巡检
+    - cron: "*/20 13-22 * * 1-5"
+    # 亚欧盘夜间黄金与离岸汇率巡检：每 4 小时一次
     - cron: "0 2,6,10 * * 1-5"
-    # 4. 月末 / 季末 / 年末结算大考期 (每月 25-31 日) 盘中自动加密巡检:
-    - cron: "15,45 14-21 25-31 * *"
 
 permissions:
   contents: read
@@ -37,10 +25,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  collect-and-deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -58,11 +43,11 @@ jobs:
       - name: Verify Python syntax
         run: python3 -m py_compile cli.py server.py sentinel/*.py
 
-      - name: Fetch previous cloud history.json (to preserve longitudinal run log)
+      - name: Fetch previous cloud history.json
         run: |
           curl -fsSL "https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/data/history.json" -o /tmp/prev_history.json || true
 
-      - name: Run live market collection, 5-layer analysis & build static PWA
+      - name: Collect live market data, run 5-layer analysis & build PWA
         run: |
           TRIG="${{ github.event_name }}"
           if [ "$TRIG" = "schedule" ]; then TRIG="smart_cron"; fi
@@ -77,6 +62,16 @@ jobs:
         uses: actions/upload-pages-artifact@v5
         with:
           path: ./dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Allow GitHub Artifact index propagation
+        run: sleep 5
 
       - name: Deploy to GitHub Pages
         id: deployment

@@ -1,4 +1,4 @@
-/* Henren Market Sentinel — Live-Top / Static-Bottom Interactive Engine */
+/* Henren Market Sentinel — Real-Time Browser Quote Stream + Live-Top / Static-Bottom Engine */
 (function () {
   "use strict";
 
@@ -7,6 +7,25 @@
     apiBase: (localStorage.getItem("sentinel_api_base") || "").replace(/\/+$/, ""),
     bundle: null,
     lastCollectedUtc: null,
+    liveQuoteEtTime: null,
+  };
+
+  // Zero-CORS real-time exchange quote mapping (Tencent Finance global feed)
+  const LIVE_US_MAP = {
+    v_usNDX: "^NDX",
+    v_usQQQ: "QQQ",
+    v_usINX: "^GSPC",
+    v_usNVDA: "NVDA",
+    v_usAVGO: "AVGO",
+    v_usSMH: "SMH",
+    v_usCRWV: "CRWV",
+    v_usANT: "ANT",
+    v_usVST: "VST",
+    v_usTLT: "TLT",
+    v_usHYG: "HYG",
+    v_usSHV: "SHV",
+    v_usFXI: "FXI",
+    v_usKWEB: "KWEB",
   };
 
   const fmtNum = (v, digits = 2) =>
@@ -44,6 +63,9 @@
   }
 
   function formatRelativeAge(isoUtc) {
+    if (STATE.liveQuoteEtTime) {
+      return `行情直连 ${STATE.liveQuoteEtTime.slice(5)} ET`;
+    }
     if (!isoUtc) return "--";
     const d = new Date(isoUtc);
     if (Number.isNaN(d.getTime())) return "--";
@@ -92,8 +114,261 @@
   }
 
   function updateFreshnessBadge() {
-    if (!STATE.lastCollectedUtc) return;
     document.getElementById("meta-freshness-rel").textContent = formatRelativeAge(STATE.lastCollectedUtc);
+  }
+
+  // ---------------------------------------------------------------------------
+  // BROWSER-DIRECT REAL-TIME QUOTE STREAM (Zero CORS, ~150ms latency on mobile)
+  // ---------------------------------------------------------------------------
+  function applyQuoteTick(qObj, newPrice, ret1dPct, dateStr) {
+    if (!qObj || !newPrice || newPrice <= 0) return;
+    qObj.price = newPrice >= 10 ? Number(newPrice.toFixed(2)) : Number(newPrice.toFixed(4));
+    if (!Number.isNaN(ret1dPct)) {
+      qObj.ret_1d_pct = Number(ret1dPct.toFixed(2));
+    }
+    if (dateStr) qObj.date = dateStr;
+
+    if (qObj.high_52w) {
+      qObj.high_52w = Math.max(qObj.high_52w, qObj.price);
+      qObj.drawdown_52w_pct = Number(((qObj.price / qObj.high_52w - 1) * 100).toFixed(2));
+    }
+    if (qObj.ipo_price) {
+      qObj.vs_ipo_pct = Number(((qObj.price / qObj.ipo_price - 1) * 100).toFixed(2));
+    }
+
+    // Update history_60d tail & multi-day returns cleanly
+    if (Array.isArray(qObj.history_60d) && qObj.history_60d.length >= 6) {
+      const h = qObj.history_60d;
+      const dStr = dateStr || h[h.length - 1].date;
+      if (h[h.length - 1].date === dStr) {
+        h[h.length - 1].close = qObj.price;
+      } else if (dStr > h[h.length - 1].date) {
+        h.push({ date: dStr, close: qObj.price });
+        if (h.length > 60) h.shift();
+      }
+      const p5 = h[Math.max(0, h.length - 6)]?.close;
+      const p20 = h[Math.max(0, h.length - 21)]?.close;
+      if (p5) qObj.ret_5d_pct = Number(((qObj.price / p5 - 1) * 100).toFixed(2));
+      if (p20) qObj.ret_20d_pct = Number(((qObj.price / p20 - 1) * 100).toFixed(2));
+    }
+  }
+
+  function recomputeDynamicAnalysisFromLiveQuotes(bundle) {
+    const snap = bundle.snapshot || {};
+    const ana = bundle.analysis || {};
+    const quotes = snap.quotes || {};
+    const opt = snap.options || {};
+    const fredM = (snap.fred || {}).metrics || {};
+    const fredD = (snap.fred || {}).derived || {};
+    const cal = snap.calendar || {};
+
+    const ndxQ = quotes["^NDX"] || {};
+    const qqqQ = quotes["QQQ"] || {};
+    const goldQ = quotes["GC=F"] || {};
+    const nvdaQ = quotes["NVDA"] || {};
+    const crwvQ = quotes["CRWV"] || {};
+    const antQ = quotes["ANT"] || {};
+
+    if (ndxQ.price && qqqQ.price) {
+      const ratio = ndxQ.price / qqqQ.price;
+      opt.ndx_spot = ndxQ.price;
+      opt.qqq_spot = qqqQ.price;
+      opt.ndx_qqq_ratio = Number(ratio.toFixed(4));
+      if (opt.zero_gamma_qqq) {
+        opt.zero_gamma_ndx = Math.round(opt.zero_gamma_qqq * ratio);
+      }
+      opt.in_negative_gamma = Boolean(opt.ndx_spot < (opt.zero_gamma_ndx || 27000));
+      if (opt.major_put_wall?.qqq_strike) {
+        opt.major_put_wall.ndx_equiv = Math.round(opt.major_put_wall.qqq_strike * ratio);
+        opt.major_put_wall.dist_pct = Number(((opt.major_put_wall.qqq_strike / qqqQ.price - 1) * 100).toFixed(2));
+      }
+      if (opt.near_put_support?.qqq_strike) {
+        opt.near_put_support.ndx_equiv = Math.round(opt.near_put_support.qqq_strike * ratio);
+      }
+      if (opt.major_call_wall?.qqq_strike) {
+        opt.major_call_wall.ndx_equiv = Math.round(opt.major_call_wall.qqq_strike * ratio);
+      }
+    }
+
+    const ndxSpot = opt.ndx_spot || ndxQ.price || 25050;
+    const zeroG = opt.zero_gamma_ndx || 27000;
+    const pwNdx = opt.major_put_wall?.ndx_equiv || 24650;
+    const pwQqq = opt.major_put_wall?.qqq_strike || 600;
+    const cwNdx = opt.major_call_wall?.ndx_equiv || 28750;
+    const cwQqq = opt.major_call_wall?.qqq_strike || 700;
+    const psychRound = opt.psych_25000_check?.psych_round_ndx || 25000;
+    const inNegG = Boolean(opt.in_negative_gamma);
+
+    const sofrSp = fredD.sofr_iorb_spread?.value_bps ?? 2.0;
+    const rrpBn = fredM.RRPONTSYD?.value ?? 0.3;
+    const cccYield = fredM.BAMLH0A3HYCEY?.value ?? 18.48;
+    const dgs10 = fredM.DGS10?.value ?? 4.92;
+    const dgs3m = fredM.DGS3MO?.value ?? 4.37;
+    const bdaysMe = cal.bdays_to_month_end ?? 3;
+    const negFcfN = snap.ai_ledger?.summary?.negative_fcf_count ?? 4;
+
+    const goldPx = goldQ.price || 3475;
+    const goldDd = goldQ.drawdown_52w_pct ?? -34;
+    const goldRsi = goldQ.rsi14 ?? 20;
+    const goldMa50 = goldQ.ma50 || 4065;
+    const isGoldDiscount = Boolean(goldDd <= -4 && goldDd >= -45);
+    ana.is_gold_discount = isGoldDiscount;
+
+    // Update top summary verdict with real-time intraday coordinates
+    const nearWallAlert = Math.abs(ndxSpot - pwNdx) <= 600
+      ? `今日盘中大跌后纳指（${fmtNum(ndxSpot, 0)}）已逼近下方最厚实盘期权防线 ~${fmtNum(pwNdx, 0)}（QQQ $${fmtNum(pwQqq, 0)}，仅差 ${Math.round(ndxSpot - pwNdx)} 点）！`
+      : `下方真正期权厚防线在纳指 ~${fmtNum(pwNdx, 0)}（QQQ $${fmtNum(pwQqq, 0)}）。`;
+
+    ana.summary_verdict =
+      `当前核心矛盾为高利率下的边缘信用爆破（CCC级借钱成本 ${fmtNum(cccYield, 1)}%）叠加 AI 云巨头现金流转负（${negFcfN}/5 家 FCF 为负）。` +
+      `纳指最新报 ${fmtNum(ndxSpot, 0)}（1日 ${fmtSigned(ndxQ.ret_1d_pct, 2, "%")}，QQQ $${fmtNum(qqqQ.price, 2)}），位于 ~${fmtNum(zeroG, 0)} 下方负 Gamma 助跌区间。` +
+      `${nearWallAlert}同时紧盯 ${cal.month_end_settlement || "月末"} 结算资金面大考；黄金回调仍属「钱荒洗金打折期」。`;
+
+    ana.live_consequences = [
+      {
+        domain: "美股大盘与期权微结构",
+        freq_badge: "盘中秒级直连",
+        level: inNegG ? "danger" : "ok",
+        live_data:
+          `纳指100 报 ${fmtNum(ndxSpot, 0)}（1日 ${fmtSigned(ndxQ.ret_1d_pct, 2, "%")}）| QQQ $${fmtNum(qqqQ.price, 2)}（${fmtSigned(qqqQ.ret_1d_pct, 2, "%")}）` +
+          ` | 翻转线 ~${fmtNum(zeroG, 0)} | 最厚 Put 防线 ~${fmtNum(pwNdx, 0)} (QQQ $${fmtNum(pwQqq, 0)})`,
+        consequence: inNegG
+          ? `现价低于翻转线 ${fmtNum(zeroG - ndxSpot, 0)} 点，处于典型「负 Gamma 顺势助跌」区间，做市商被动砸期货对冲看跌期权，导致前几日反抽迅速回吐；${fmtNum(psychRound, 0)} 整数位保护单薄，距 QQQ $${fmtNum(pwQqq, 0)} 厚防线仅剩 ${fmtNum(Math.abs(opt.major_put_wall?.dist_pct || 0), 2)}%。`
+          : `现价站稳翻转线 ~${fmtNum(zeroG, 0)} 上方，做市商处于正 Gamma 高抛低吸护盘模式。`,
+        conclusion: inNegG
+          ? ndxSpot <= pwNdx + 120
+            ? `正在测试 ~${fmtNum(pwNdx, 0)}（QQQ $${fmtNum(pwQqq, 0)}）最厚期权防线：观察此处做市商平仓能否止跌；一旦有效失守将触发二次去杠杆，切忌盲目接飞刀。`
+            : `验证「反抽非反转」：负 Gamma 区下跌惯性未完，不抄半山腰；重点盯防 ~${fmtNum(pwNdx, 0)}（QQQ $${fmtNum(pwQqq, 0)}）最厚防线支撑得失。`
+          : `顺势持有，上方阻力墙 ~${fmtNum(cwNdx, 0)}（QQQ $${fmtNum(cwQqq, 0)}）。`,
+      },
+      {
+        domain: "黄金实时买点判别",
+        freq_badge: "盘中秒级直连",
+        level: isGoldDiscount ? "opportunity" : "ok",
+        live_data:
+          `COMEX 黄金 $${fmtNum(goldPx, 1)}（1日 ${fmtSigned(goldQ.ret_1d_pct, 2, "%")}，高点回撤 ${fmtSigned(goldDd, 1, "%")}）` +
+          ` | 日线 RSI=${fmtNum(goldRsi, 0)} | 50日线 $${fmtNum(goldMa50, 0)}`,
+        consequence:
+          `科技股急跌引发跨资产追加保证金（「砍仓先砍流动性最好的资产」），对冲基金连带抛售黄金换取美元现金，把金价继续压在极端超卖折价区。`,
+        conclusion:
+          `维持「钱荒洗金打折期」判断：严禁加杠杆，宜用冗余现金分批低吸；一旦市场去杠杆倒逼美联储松动管道或月末结算度过，黄金将率先反弹。`,
+      },
+      {
+        domain: "AI 产业链内部分化与排雷",
+        freq_badge: "盘中秒级 + 日更利差",
+        level: "danger",
+        live_data:
+          `NVDA $${fmtNum(nvdaQ.price, 2)} (${fmtSigned(nvdaQ.ret_1d_pct, 1, "%")}) | ` +
+          `CoreWeave $${fmtNum(crwvQ.price, 2)} (${fmtSigned(crwvQ.ret_1d_pct, 1, "%")}) | ` +
+          `Anthropic $${fmtNum(antQ.price, 2)} (较$83发行价 ${fmtSigned(antQ.vs_ipo_pct, 1, "%")}) | CCC利率 ${fmtNum(cccYield, 2)}%`,
+        consequence:
+          `高达 ${fmtNum(cccYield, 1)}% 的垃圾债借钱成本叠加负 Gamma 抛压，令高负债二线算力（CRWV）与破发超级 IPO（ANT）持续领跌，前期消息刺激反抽被迅速证伪。`,
+        conclusion:
+          `继续排雷规避：坚决远离二线高负债算力租赁与破发次新股，严禁逆势马丁格尔加仓摊平。`,
+      },
+      {
+        domain: "美元回购水管与现金仓位",
+        freq_badge: "FRED 日更 + 盘中长债",
+        level: sofrSp >= 8 ? "danger" : "warning",
+        live_data:
+          `SOFR-IORB ${fmtSigned(sofrSp, 1, " bps")} | ON RRP $${fmtNum(rrpBn, 2)}B | ` +
+          `TLT $${fmtNum(quotes["TLT"]?.price, 2)} (${fmtSigned(quotes["TLT"]?.ret_1d_pct, 2, "%")}) | 距月末结算 ${bdaysMe} 交易日`,
+        consequence:
+          `股市大跌触发部分避险资金流入长债（TLT ${fmtSigned(quotes["TLT"]?.ret_1d_pct, 1, "%")}），但只要隔夜回购管道未彻底爆裂，美联储「只认管道不认股价」，不会因科技股大跌而提前救市。`,
+        conclusion:
+          `继续持有 ~${fmtNum(dgs3m, 2)}% 短端美债现金（SHV $${fmtNum(quotes["SHV"]?.price, 2)}）作为干火药，静待 ${cal.month_end_settlement || "月末"} 回购结算大考落地。`,
+      },
+    ];
+  }
+
+  function fetchRealtimeBrowserQuotes(bundle) {
+    return new Promise((resolve) => {
+      if (!bundle?.snapshot?.quotes) {
+        resolve(false);
+        return;
+      }
+      const script = document.createElement("script");
+      const symbols = [
+        "usNDX", "usQQQ", "usINX", "usNVDA", "usAVGO", "usSMH",
+        "usCRWV", "usANT", "usVST", "usTLT", "usHYG", "usSHV",
+        "usFXI", "usKWEB", "hf_GC", "hf_HG",
+      ].join(",");
+      script.charset = "gbk";
+      script.async = true;
+      script.src = `https://qt.gtimg.cn/q=${symbols}&_=${Date.now()}`;
+
+      let finished = false;
+      const done = (ok) => {
+        if (finished) return;
+        finished = true;
+        if (script.parentNode) script.parentNode.removeChild(script);
+        resolve(ok);
+      };
+
+      const timer = window.setTimeout(() => done(false), 3500);
+
+      script.onload = () => {
+        window.clearTimeout(timer);
+        try {
+          const quotes = bundle.snapshot.quotes;
+          let updatedAny = false;
+          let newestEt = null;
+
+          Object.entries(LIVE_US_MAP).forEach(([varName, sym]) => {
+            const raw = window[varName];
+            if (typeof raw !== "string" || !raw.includes("~")) return;
+            const parts = raw.split("~");
+            const px = parseFloat(parts[3]);
+            const chgPct = parseFloat(parts[32]);
+            const tsEt = parts[30] || ""; // "YYYY-MM-DD HH:MM:SS"
+            const datePart = tsEt.slice(0, 10);
+            if (px > 0 && quotes[sym]) {
+              if (!quotes[sym].date || !datePart || datePart >= quotes[sym].date) {
+                applyQuoteTick(quotes[sym], px, chgPct, datePart || quotes[sym].date);
+                updatedAny = true;
+                if (tsEt && (!newestEt || tsEt > newestEt)) newestEt = tsEt;
+              }
+            }
+          });
+
+          // Gold & Copper futures (comma-separated)
+          if (typeof window.v_hf_GC === "string" && quotes["GC=F"]) {
+            const p = window.v_hf_GC.split(",");
+            const gcPx = parseFloat(p[0]);
+            const gcPct = parseFloat(p[1]);
+            if (gcPx > 0) {
+              applyQuoteTick(quotes["GC=F"], gcPx, gcPct, newestEt ? newestEt.slice(0, 10) : quotes["GC=F"].date);
+              updatedAny = true;
+            }
+          }
+          if (typeof window.v_hf_HG === "string" && quotes["HG=F"]) {
+            const p = window.v_hf_HG.split(",");
+            const hgRaw = parseFloat(p[0]);
+            const hgPct = parseFloat(p[1]);
+            if (hgRaw > 0) {
+              const hgPx = hgRaw > 50 ? hgRaw / 100.0 : hgRaw;
+              applyQuoteTick(quotes["HG=F"], hgPx, hgPct, newestEt ? newestEt.slice(0, 10) : quotes["HG=F"].date);
+            }
+          }
+
+          if (updatedAny) {
+            if (newestEt) STATE.liveQuoteEtTime = newestEt;
+            recomputeDynamicAnalysisFromLiveQuotes(bundle);
+          }
+          done(updatedAny);
+        } catch (e) {
+          console.warn("Realtime quote parse warning:", e);
+          done(false);
+        }
+      };
+
+      script.onerror = () => {
+        window.clearTimeout(timer);
+        done(false);
+      };
+
+      document.head.appendChild(script);
+    });
   }
 
   function renderTopMeta(bundle) {
@@ -103,13 +378,13 @@
 
     updateFreshnessBadge();
     document.getElementById("meta-updated-at").textContent =
-      `快照 ${formatLocalTime(snap.collected_at_utc)}`;
+      `底层快照 ${formatLocalTime(snap.collected_at_utc)}`;
 
     const modeTxt = sched.mode_label
-      ? `${sched.mode_label} (每${sched.interval_minutes || 60}m)`
+      ? `${sched.mode_label}`
       : STATE.mode === "api"
       ? "实时智能调度中"
-      : "GitHub云端自动巡检";
+      : "盘中秒级行情直连 + 云端巡检";
     document.getElementById("meta-schedule-info").textContent = modeTxt;
 
     const reportLink = document.getElementById("btn-download-md");
@@ -195,8 +470,8 @@
       })
       .join("");
 
-    // 6 Pure Intraday / Daily High-Frequency KPIs
     const ndxQ = quotes["^NDX"] || {};
+    const qqqQ = quotes["QQQ"] || {};
     const goldQ = quotes["GC=F"] || {};
     const nvdaQ = quotes["NVDA"] || {};
     const crwvQ = quotes["CRWV"] || {};
@@ -209,24 +484,24 @@
 
     const kpis = [
       {
-        label: "纳指100 (^NDX)",
-        freq: "盘中",
+        label: "纳指100 / QQQ",
+        freq: "秒级",
         freqCls: "freq-live",
-        value: fmtNum(ndxQ.price, 0),
-        sub: `1日 ${fmtSigned(ndxQ.ret_1d_pct, 2, "%")} | 防线 ~${fmtNum(options.major_put_wall?.ndx_equiv, 0)}`,
+        value: `${fmtNum(ndxQ.price, 0)}`,
+        sub: `1日 ${fmtSigned(ndxQ.ret_1d_pct, 2, "%")} | QQQ $${fmtNum(qqqQ.price, 2)}`,
         cls: clsSigned(ndxQ.ret_1d_pct),
       },
       {
         label: "COMEX 黄金 (GC=F)",
-        freq: "盘中",
+        freq: "秒级",
         freqCls: "freq-live",
         value: `$${fmtNum(goldQ.price, 1)}`,
         sub: `1日 ${fmtSigned(goldQ.ret_1d_pct, 2, "%")} | RSI(14) ${fmtNum(goldQ.rsi14, 0)}`,
         cls: "gold-txt",
       },
       {
-        label: "AI 边缘风向 (CRWV)",
-        freq: "盘中",
+        label: "AI 脆弱端 (CRWV)",
+        freq: "秒级",
         freqCls: "freq-live",
         value: `${fmtSigned(crwvQ.ret_1d_pct, 1, "%")}`,
         sub: `NVDA ${fmtSigned(nvdaQ.ret_1d_pct, 1, "%")} | ANT $${fmtNum(antQ.price, 1)}`,
@@ -234,8 +509,8 @@
       },
       {
         label: "美债 MOVE / 纳指 VXN",
-        freq: "盘中",
-        freqCls: "freq-live",
+        freq: "日频",
+        freqCls: "freq-daily",
         value: `${fmtNum(moveQ.price, 1)} / ${fmtNum(vxnVal, 1)}`,
         sub: `MOVE分位 ${fmtNum(moveQ.pct_1y, 0)}% | VIX ${fmtNum(quotes["^VIX"]?.price, 1)}`,
         cls: "",
@@ -273,7 +548,6 @@
       )
       .join("");
 
-    // Render Live Data -> Consequence -> Conclusion Cards
     const chains = ana.live_consequences || [];
     document.getElementById("consequence-grid").innerHTML = chains
       .map(
@@ -318,9 +592,9 @@
     if (ndx >= zeroG) {
       box.innerHTML = `<strong class="pos">【站上翻转线 &ge; ${zeroG.toLocaleString()} &rarr; 正 Gamma 护盘后果】</strong>：做市商回归高抛低吸压制波动；若 CCC 垃圾债利差同步回落，反抽可升级为趋势修复，上方目标阻力墙 ~${callWall.toLocaleString()}。`;
     } else if (ndx >= psychRound + 150) {
-      box.innerHTML = `<strong class="warn-txt">【位于翻转线 ~${zeroG.toLocaleString()} 下方 &rarr; 负 Gamma 放大后果】</strong>：做市商被迫追涨杀跌，突发利好拉升极易在次日回吐（反抽非反转），结论：逢高降杠杆，不追高。`;
+      box.innerHTML = `<strong class="warn-txt">【位于翻转线 ~${zeroG.toLocaleString()} 下方 &rarr; 负 Gamma 放大后果】</strong>：做市商被迫追涨杀跌，突发利好拉升极易回吐（反抽非反转），结论：逢高降杠杆，不追高。`;
     } else if (ndx >= putWall - 80) {
-      box.innerHTML = `<strong class="gold-txt">【失守 ${psychRound.toLocaleString()} 整数关口 &rarr; 测试 ~${putWall.toLocaleString()} (QQQ $${putWallQ}) 最厚防线】</strong>：整数关口筹码单薄易被穿透；真正实盘看跌防线在 ~${putWall.toLocaleString()}，做市商平仓对冲盘将在此触发技术支撑。`;
+      box.innerHTML = `<strong class="gold-txt">【逼近/测试 ${psychRound.toLocaleString()} 与 ~${putWall.toLocaleString()} (QQQ $${putWallQ}) 最厚防线】</strong>：整数关口筹码单薄易被穿透；真正实盘看跌防线在 ~${putWall.toLocaleString()}，做市商平仓对冲盘将在此触发技术支撑。`;
     } else {
       box.innerHTML = `<strong class="neg">【击穿 ~${putWall.toLocaleString()} 最厚防线 &rarr; 尾部加速去杠杆后果】</strong>：核心期权墙失守引发加速助跌；结论：紧盯 SOFR−IORB 是否破 +10bps，若管道受损倒逼联储救市，黄金将先于美股暴力反弹。`;
     }
@@ -351,7 +625,7 @@
       const maxQ = profile[profile.length - 1].qqq_strike;
       const xForQ = (q) => padL + ((q - minQ) / Math.max(maxQ - minQ, 1)) * plotW;
 
-      const xSpot = xForQ(opt.qqq_spot || 638);
+      const xSpot = xForQ(opt.qqq_spot || 610);
       const xZeroG = xForQ(opt.zero_gamma_qqq || 660);
       const xPsych = xForQ(psychRound / (opt.ndx_qqq_ratio || 41.08));
 
@@ -383,11 +657,11 @@
           ${
             xPsych >= padL && xPsych <= W - padR
               ? `<line x1="${xPsych.toFixed(1)}" y1="${padT + 12}" x2="${xPsych.toFixed(1)}" y2="${H - padB}" stroke="rgba(255,255,255,0.35)" stroke-dasharray="2 3" />
-                 <text x="${xPsych.toFixed(1)}" y="${padT + 8}" text-anchor="middle" fill="var(--text-muted)" font-size="9" font-family="var(--font-mono)">${(psychRound / 1000).toFixed(0)}k整数(薄)</text>`
+                 <text x="${xPsych.toFixed(1)}" y="${padT + 10}" text-anchor="middle" fill="var(--text-muted)" font-size="8.5" font-family="var(--font-mono)">${(psychRound / 1000).toFixed(0)}k</text>`
               : ""
           }
-          <line x1="${xSpot.toFixed(1)}" y1="${padT}" x2="${xSpot.toFixed(1)}" y2="${H - padB}" stroke="var(--accent-gold)" stroke-width="2" />
-          <text x="${xSpot.toFixed(1)}" y="${padT - 6}" text-anchor="middle" fill="var(--accent-gold)" font-size="10" font-weight="600" font-family="var(--font-mono)">现价 ${fmtNum(opt.ndx_spot, 0)}</text>
+          <line x1="${xSpot.toFixed(1)}" y1="${padT}" x2="${xSpot.toFixed(1)}" y2="${H - padB}" stroke="var(--accent-gold)" stroke-width="2.2" />
+          <text x="${xSpot.toFixed(1)}" y="${padT - 6}" text-anchor="middle" fill="var(--accent-gold)" font-size="10" font-weight="600" font-family="var(--font-mono)">现价 ${fmtNum(opt.ndx_spot, 0)} ($${fmtNum(opt.qqq_spot, 1)})</text>
           ${
             xZeroG >= padL && xZeroG <= W - padR
               ? `<line x1="${xZeroG.toFixed(1)}" y1="${padT}" x2="${xZeroG.toFixed(1)}" y2="${H - padB}" stroke="var(--series-cyan)" stroke-width="1.8" stroke-dasharray="4 3" />
@@ -399,18 +673,17 @@
     }
 
     const slider = document.getElementById("sandbox-slider");
-    const spotVal = Math.round(opt.ndx_spot || 26214);
+    const spotVal = Math.round(opt.ndx_spot || 25050);
     slider.min = String(Math.round((opt.major_put_wall?.ndx_equiv || 24650) - 1100));
     slider.max = String(Math.round((opt.major_call_wall?.ndx_equiv || 28750) + 500));
     slider.value = String(spotVal);
     updateGammaSandbox(spotVal, opt);
     slider.oninput = (e) => updateGammaSandbox(e.target.value, opt);
 
-    // Gold 60d live chart
     const goldQ = quotes["GC=F"] || {};
     const hist = goldQ.history_60d || [];
     document.getElementById("gold-chart-subtitle").textContent =
-      `黄金 $${fmtNum(goldQ.price, 1)} · RSI(14)=${fmtNum(goldQ.rsi14, 0)} · 200日线 $${fmtNum(goldQ.ma200, 0)}`;
+      `黄金 $${fmtNum(goldQ.price, 1)} (${fmtSigned(goldQ.ret_1d_pct, 2, "%")}) · RSI(14)=${fmtNum(goldQ.rsi14, 0)}`;
 
     const goldBox = document.getElementById("chart-gold");
     if (hist.length >= 5) {
@@ -462,9 +735,9 @@
     const vixQ = quotes["^VIX"] || {};
 
     const optRows = [
+      ["纳指100 / QQQ 实时价", `${fmtNum(opt.ndx_spot, 0)}`, `QQQ $${fmtNum(opt.qqq_spot, 2)} (1日 ${fmtSigned(quotes["QQQ"]?.ret_1d_pct, 2, "%")})`],
       ["正负 Gamma 翻转位", `~${fmtNum(opt.zero_gamma_ndx, 0)}`, `QQQ $${fmtNum(opt.zero_gamma_qqq, 1)} (${opt.in_negative_gamma ? "负Gamma" : "正Gamma"})`],
-      ["近端第一看跌支撑", `~${fmtNum(opt.near_put_support?.ndx_equiv, 0)}`, `QQQ $${fmtNum(opt.near_put_support?.qqq_strike, 0)} (OI ${fmtNum(opt.near_put_support?.open_interest, 0)})`],
-      ["多头最厚防线 (Put Wall)", `~${fmtNum(opt.major_put_wall?.ndx_equiv, 0)}`, `QQQ $${fmtNum(opt.major_put_wall?.qqq_strike, 0)} (OI ${fmtNum(opt.major_put_wall?.open_interest, 0)})`],
+      ["多头最厚防线 (Put Wall)", `~${fmtNum(opt.major_put_wall?.ndx_equiv, 0)}`, `QQQ $${fmtNum(opt.major_put_wall?.qqq_strike, 0)} (距现价 ${fmtSigned(opt.major_put_wall?.dist_pct, 2, "%")})`],
       [`${psychRound.toLocaleString()} 整数关口对比`, `~${psychRound.toLocaleString()}`, `厚防线筹码是此处的 ${fmtNum(opt.psych_25000_check?.wall_to_25000_oi_ratio, 1)} 倍`],
       ["上方最大看涨阻力墙", `~${fmtNum(opt.major_call_wall?.ndx_equiv, 0)}`, `QQQ $${fmtNum(opt.major_call_wall?.qqq_strike, 0)} (OI ${fmtNum(opt.major_call_wall?.open_interest, 0)})`],
       ["美债 MOVE vs 纳指 VXN", `${fmtNum(moveQ.price, 1)} / ${fmtNum(vxnVal, 1)}`, `分位 ${fmtNum(moveQ.pct_1y, 0)}% vs ${fmtNum(vxnPct, 0)}% (VIX ${fmtNum(vixQ.price, 1)})`],
@@ -473,7 +746,6 @@
       .map(([k, v, sub]) => `<tr><td>${k}</td><td class="num">${v}</td><td class="num">${sub}</td></tr>`)
       .join("");
 
-    // AI Equities live table
     const aiTickers = [
       ["NVDA", "核心算力芯片"],
       ["AVGO", "定制ASIC"],
@@ -490,7 +762,7 @@
           <tr>
             <td><strong>${sym}</strong> · <span style="color:var(--text-muted)">${role}${extra}</span></td>
             <td class="num">$${fmtNum(q.price, 2)}</td>
-            <td class="num ${clsSigned(q.ret_1d_pct)}">${fmtSigned(q.ret_1d_pct, 1, "%")}</td>
+            <td class="num ${clsSigned(q.ret_1d_pct)}">${fmtSigned(q.ret_1d_pct, 2, "%")}</td>
             <td class="num ${clsSigned(q.ret_5d_pct)}">${fmtSigned(q.ret_5d_pct, 1, "%")}</td>
             <td class="num ${clsSigned(q.drawdown_52w_pct)}">${fmtSigned(q.drawdown_52w_pct, 1, "%")}</td>
           </tr>
@@ -498,8 +770,9 @@
       })
       .join("");
 
-    // Cross-market live table
     const crossList = [
+      ["^GSPC", "标普500指数"],
+      ["QQQ", "纳指100 ETF (QQQ)"],
       ["GC=F", "COMEX 黄金期货"],
       ["HG=F", "COMEX 铜期货"],
       ["TLT", "20年+长端美债 ETF"],
@@ -518,7 +791,7 @@
           <tr>
             <td><strong>${label}</strong></td>
             <td class="num">${fmtNum(q.price, digits)}</td>
-            <td class="num ${clsSigned(q.ret_5d_pct)}">${fmtSigned(q.ret_5d_pct, 1, "%")}</td>
+            <td class="num ${clsSigned(q.ret_1d_pct)}">1日 ${fmtSigned(q.ret_1d_pct, 2, "%")}</td>
             <td class="num ${clsSigned(q.ret_20d_pct)}">${fmtSigned(q.ret_20d_pct, 1, "%")}</td>
             <td class="num ${clsSigned(q.drawdown_52w_pct)}">${fmtSigned(q.drawdown_52w_pct, 1, "%")}</td>
           </tr>
@@ -600,7 +873,6 @@
     const aiLedger = snap.ai_ledger || {};
     const aiPillar = ana.pillars?.ai_ledger || {};
 
-    // Slow Quarterly Hyperscaler CapEx
     const comps = aiLedger.companies || [];
     const sum = aiLedger.summary || {};
     document.getElementById("ai-capex-summary-label").textContent =
@@ -671,7 +943,6 @@
       )
       .join("");
 
-    // Weekly Fed Balance Sheet Net Liquidity
     const netLiq = fredD.net_liquidity || {};
     const series = netLiq.series || [];
     document.getElementById("net-liq-subtitle").textContent =
@@ -767,6 +1038,17 @@
     renderSupplementaryBottom(bundle);
   }
 
+  async function refreshRealtimeQuotesAndRender() {
+    if (!STATE.bundle) return false;
+    const ok = await fetchRealtimeBrowserQuotes(STATE.bundle);
+    if (ok) {
+      renderTopMeta(STATE.bundle);
+      renderLiveTopAndConsequences(STATE.bundle);
+      renderIntradayMarkets(STATE.bundle);
+    }
+    return ok;
+  }
+
   async function loadHistory() {
     try {
       const url = STATE.mode === "api" ? apiUrl("/api/history") : `./data/history.json?_t=${Date.now()}`;
@@ -788,7 +1070,9 @@
         if (!st.is_refreshing && st.collected_at_utc && st.collected_at_utc !== prevUtc) {
           const latResp = await fetch(apiUrl("/api/latest"), { cache: "no-store" });
           if (latResp.ok) {
-            renderAll(await latResp.json());
+            const fresh = await latResp.json();
+            await fetchRealtimeBrowserQuotes(fresh);
+            renderAll(fresh);
             await loadHistory();
             showToast("已自动静默更新至最新实盘数据");
           }
@@ -803,6 +1087,7 @@
   }
 
   async function triggerOnVisitCheck() {
+    await refreshRealtimeQuotesAndRender();
     if (STATE.mode === "api") {
       try {
         const prevUtc = STATE.lastCollectedUtc;
@@ -818,9 +1103,9 @@
         if (resp.ok) {
           const fresh = await resp.json();
           if (fresh?.snapshot?.collected_at_utc !== STATE.lastCollectedUtc) {
+            await fetchRealtimeBrowserQuotes(fresh);
             renderAll(fresh);
             await loadHistory();
-            showToast("已同步云端最新巡检快照");
           }
         }
       } catch (_) {}
@@ -835,19 +1120,25 @@
       clearTimeout(timer);
       if (resp.ok && (resp.headers.get("content-type") || "").includes("application/json")) {
         STATE.mode = "api";
-        renderAll(await resp.json());
+        const bundle = await resp.json();
+        await fetchRealtimeBrowserQuotes(bundle);
+        renderAll(bundle);
         await loadHistory();
-        document.getElementById("current-mode-badge").textContent = "实时 Python 后端引擎 (访问即刻重算)";
+        document.getElementById("current-mode-badge").textContent =
+          "实时 Python 后端 + 浏览器盘中秒级行情直连";
         triggerOnVisitCheck();
         return;
       }
     } catch (_) {}
 
     STATE.mode = "static";
-    document.getElementById("current-mode-badge").textContent = "GitHub Pages 云端模式 (Actions 自动更新)";
+    document.getElementById("current-mode-badge").textContent =
+      "盘中秒级行情直连 + GitHub 云端定期巡检";
     const resp = await fetch(`./data/latest_snapshot.json?_t=${Date.now()}`, { cache: "no-store" });
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    renderAll(await resp.json());
+    const bundle = await resp.json();
+    await fetchRealtimeBrowserQuotes(bundle);
+    renderAll(bundle);
     await loadHistory();
   }
 
@@ -857,20 +1148,27 @@
     btn.addEventListener("click", async () => {
       btn.disabled = true;
       btn.classList.add("is-loading");
-      label.textContent = STATE.mode === "api" ? "拉取实盘中..." : "同步云端中...";
+      label.textContent = "拉取最新行情...";
       try {
         if (STATE.mode === "api") {
           const resp = await fetch(apiUrl("/api/refresh"), { method: "POST" });
           if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-          renderAll(await resp.json());
+          const bundle = await resp.json();
+          await fetchRealtimeBrowserQuotes(bundle);
+          renderAll(bundle);
           await loadHistory();
-          showToast("已完成全量实盘重算并更新结论");
+          showToast("已完成全量 FRED / 期权链与秒级行情重算");
         } else {
           const resp = await fetch(`./data/latest_snapshot.json?_t=${Date.now()}`, { cache: "no-store" });
-          if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-          renderAll(await resp.json());
-          await loadHistory();
-          showToast("已同步云端最新巡检快照");
+          if (resp.ok) {
+            const bundle = await resp.json();
+            await fetchRealtimeBrowserQuotes(bundle);
+            renderAll(bundle);
+            await loadHistory();
+          } else {
+            await refreshRealtimeQuotesAndRender();
+          }
+          showToast(`已刷新至最新盘中实盘价 (${STATE.liveQuoteEtTime ? STATE.liveQuoteEtTime.slice(11) + " ET" : "最新"})`);
         }
       } catch (err) {
         showToast("刷新失败: " + err.message);
@@ -925,29 +1223,16 @@
 
     document.addEventListener("visibilitychange", () => {
       if (document.visibilityState === "visible") {
-        updateFreshnessBadge();
         triggerOnVisitCheck();
       }
     });
 
+    // Auto-stream real-time exchange quotes every 20s while page is visible
     window.setInterval(async () => {
-      updateFreshnessBadge();
-      if (STATE.mode === "api" && document.visibilityState === "visible") {
-        try {
-          const r = await fetch(apiUrl("/api/status"), { cache: "no-store" });
-          if (r.ok) {
-            const st = await r.json();
-            if (st.collected_at_utc && st.collected_at_utc !== STATE.lastCollectedUtc && !st.is_refreshing) {
-              const lat = await fetch(apiUrl("/api/latest"), { cache: "no-store" });
-              if (lat.ok) {
-                renderAll(await lat.json());
-                await loadHistory();
-              }
-            }
-          }
-        } catch (_) {}
+      if (document.visibilityState === "visible") {
+        await refreshRealtimeQuotesAndRender();
       }
-    }, 45000);
+    }, 20000);
   }
 
   async function init() {
