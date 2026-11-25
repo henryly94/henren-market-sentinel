@@ -44,16 +44,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Python 3.12
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: "3.12"
           cache: "pip"
 
       - name: Install dependencies
         run: pip install -r requirements.txt
+
+      - name: Verify Python syntax
+        run: python3 -m py_compile cli.py server.py sentinel/*.py
 
       - name: Fetch previous cloud history.json (to preserve longitudinal run log)
         run: |
@@ -66,15 +69,15 @@ jobs:
           python3 cli.py --trigger "$TRIG" --seed-history /tmp/prev_history.json --export-static-site dist
 
       - name: Configure GitHub Pages
-        uses: actions/configure-pages@v5
+        uses: actions/configure-pages@v6
         with:
           enablement: true
 
       - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v5
         with:
           path: ./dist
 
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
