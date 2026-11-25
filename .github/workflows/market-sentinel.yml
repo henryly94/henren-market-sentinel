@@ -1,0 +1,80 @@
+name: Market Sentinel — Smart Data Fetch & Pages Deploy
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: "手动触发原因（可选）"
+        required: false
+        default: "mobile_manual_dispatch"
+  schedule:
+    # 1. 美元水管放榜时刻 (EST = UTC-5):
+    #    08:10 ET (SOFR 放榜后)、13:25 ET (ON RRP 逆回购结果后)、17:25 ET (FRED 信用利差 & 周四 H.4.1 更新后)
+    - cron: "10 13 * * 1-5"
+    - cron: "25 18 * * 1-5"
+    - cron: "25 22 * * 1-5"
+    # 2. 美股开盘与尾盘负 Gamma 脉冲窗口:
+    #    09:35 ET、10:10 ET (开盘对冲潮) 与 15:35 ET、16:10 ET (尾盘 MOC / 0DTE 结算) + 12:00 ET 午盘
+    - cron: "35 14 * * 1-5"
+    - cron: "10 15 * * 1-5"
+    - cron: "0 17 * * 1-5"
+    - cron: "35 20 * * 1-5"
+    - cron: "10 21 * * 1-5"
+    # 3. 亚欧盘夜间黄金与离岸汇率巡检 (北京时间上午/下午/傍晚):
+    - cron: "0 2,6,10 * * 1-5"
+    # 4. 月末 / 季末 / 年末结算大考期 (每月 25-31 日) 盘中自动加密巡检:
+    - cron: "15,45 14-21 25-31 * *"
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages-market-sentinel"
+  cancel-in-progress: false
+
+jobs:
+  collect-and-deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Fetch previous cloud history.json (to preserve longitudinal run log)
+        run: |
+          curl -fsSL "https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/data/history.json" -o /tmp/prev_history.json || true
+
+      - name: Run live market collection, 5-layer analysis & build static PWA
+        run: |
+          TRIG="${{ github.event_name }}"
+          if [ "$TRIG" = "schedule" ]; then TRIG="smart_cron"; fi
+          python3 cli.py --trigger "$TRIG" --seed-history /tmp/prev_history.json --export-static-site dist
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./dist
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

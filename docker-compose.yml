@@ -1,0 +1,12 @@
+services:
+  henren-sentinel:
+    build: .
+    container_name: henren-market-sentinel
+    restart: unless-stopped
+    ports:
+      - "8765:8765"
+    environment:
+      - PORT=8765
+    volumes:
+      - ./data:/app/data
+      - ./reports:/app/reports

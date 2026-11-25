@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>狠人框架 · 全球市场风向与微结构巡检台</title>
+  <meta name="description" content="基于一个狠人（@henren778）五层框架构建的美元水管、信用分层、期权Gamma防线、AI算力账本与黄金打折期实时巡检移动端/桌面端综合看板。" />
+  <meta name="theme-color" content="#0f1115" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="狠人风向台" />
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
+  <link rel="icon" type="image/png" href="./icons/favicon-64.png" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body data-mobile-tab="all">
+  <div class="app-shell">
+    <header class="topbar" id="top-header">
+      <div class="brand-row">
+        <img src="./icons/icon-192.png" alt="狠人风向台图标" class="brand-icon" />
+        <div class="brand-group">
+          <h1>狠人框架 · 全球市场风向台</h1>
+          <div class="brand-meta">
+            <span class="freshness-badge">
+              <span id="live-status-dot" class="status-dot"></span>
+              <span id="meta-freshness-rel">加载中...</span>
+            </span>
+            <span id="meta-updated-at" class="hide-mobile">--</span>
+            <span class="meta-sep hide-mobile">|</span>
+            <span id="meta-schedule-info">--</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="topbar-actions">
+        <button id="btn-open-settings" class="btn" type="button" title="数据源与手机端安装说明">
+          云端 / 手机设置
+        </button>
+        <a id="btn-download-md" class="btn hide-mobile" href="./reports/latest_market_brief.md" target="_blank" rel="noopener">
+          Markdown 研报
+        </a>
+        <button id="btn-refresh-live" class="btn btn-primary" type="button">
+          <span class="spinner" aria-hidden="true"></span>
+          <span id="btn-refresh-label">实时刷新数据</span>
+        </button>
+      </div>
+    </header>
+
+    <div id="sync-banner" class="sync-banner" role="status">
+      <span id="sync-banner-text">检测到你主动打开看板，正在后台拉取最新实盘数据...</span>
+      <span class="tag tag-opportunity">自动重算中</span>
+    </div>
+
+    <nav class="section-nav" id="section-nav" aria-label="桌面模块导航">
+      <a id="nav-overview" class="nav-link active" href="#sec-overview">总风向与策略</a>
+      <a id="nav-plumbing" class="nav-link" href="#sec-plumbing">一、美元水管与信用</a>
+      <a id="nav-options" class="nav-link" href="#sec-options">二、期权Gamma与防线</a>
+      <a id="nav-ai" class="nav-link" href="#sec-ai">三、AI算力账本</a>
+      <a id="nav-gold" class="nav-link" href="#sec-gold">四、黄金与外溢</a>
+      <a id="nav-schedule" class="nav-link" href="#sec-schedule">五、智能调度与历史</a>
+    </nav>
+
+    <main id="main-content">
+      <!-- PANE 1: OVERVIEW & PLAYBOOK -->
+      <section id="sec-overview" class="section-block mobile-pane" data-pane="overview">
+        <div class="hero-grid">
+          <div class="panel" id="hero-verdict-panel">
+            <div class="verdict-kicker" id="verdict-kicker">REGIME DIAGNOSIS · 当前市场风向总定调</div>
+            <h2 class="verdict-headline" id="verdict-headline">正在分析真实市场快照...</h2>
+            <p class="verdict-body" id="verdict-summary"></p>
+            <div class="tag-row" id="verdict-tags"></div>
+          </div>
+
+          <div class="panel" id="hero-scores-panel">
+            <div class="score-header-row">
+              <div>
+                <div class="kpi-label">五维综合脆弱度 / 风险刻度 (0–100)</div>
+                <div class="section-subtitle">联储只认管道不认股价 · 先查水管再看K线</div>
+              </div>
+              <div class="overall-score-num" id="overall-risk-score">--</div>
+            </div>
+            <div class="pillar-meter-list" id="pillar-meters"></div>
+          </div>
+        </div>
+
+        <div class="kpi-strip" id="core-kpi-strip"></div>
+
+        <div class="section-block">
+          <div class="section-header">
+            <h2>大类资产风向与操作策略清单</h2>
+            <span class="section-subtitle">基于真实管道、期权筹码墙与现金流账本自动推演</span>
+          </div>
+          <div class="playbook-grid" id="playbook-grid"></div>
+        </div>
+      </section>
+
+      <!-- PANE 2: PLUMBING & CREDIT -->
+      <section id="sec-plumbing" class="section-block mobile-pane" data-pane="plumbing">
+        <div class="section-header">
+          <h2>一、美元水管与资金信用分层（「钱没了」vs「钱贵了」）</h2>
+          <span class="section-subtitle">美联储 FRED 实盘：SOFR / IORB / ON RRP / TGA / 准备金 / CCC利差</span>
+        </div>
+        <div class="two-col">
+          <div class="panel">
+            <div class="section-header">
+              <h2>美元净流动性 (WALCL − TGA − RRP) 与 TGA 轨迹</h2>
+              <span class="section-subtitle" id="net-liq-subtitle">过去52周周度真实序列</span>
+            </div>
+            <div class="chart-box" id="chart-liquidity"></div>
+            <div class="chart-legend">
+              <span class="legend-item"><span class="legend-swatch" style="background: var(--accent-gold);"></span>美元净流动性 ($T)</span>
+              <span class="legend-item"><span class="legend-swatch" style="background: var(--series-cyan);"></span>财政部 TGA 余额 ($B)</span>
+            </div>
+            <ul class="findings-list" id="plumbing-findings"></ul>
+          </div>
+
+          <div class="panel">
+            <div class="section-header">
+              <h2>SOFR − IORB 隔夜回购走廊利差 &amp; 信用爆破梯度</h2>
+              <span class="section-subtitle">正值代表 SOFR 向上突破准备金利率上限</span>
+            </div>
+            <div class="chart-box" id="chart-sofr-spread"></div>
+            <div class="table-wrap" style="margin-top: 12px;">
+              <table class="data-table" id="credit-tier-table">
+                <thead>
+                  <tr>
+                    <th>利率 / 信用层级指标</th>
+                    <th class="num">最新值</th>
+                    <th class="num">20日变化</th>
+                    <th class="num">1年分位</th>
+                  </tr>
+                </thead>
+                <tbody id="credit-tier-tbody"></tbody>
+              </table>
+            </div>
+            <ul class="findings-list" id="credit-findings"></ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- PANE 3: OPTIONS GAMMA & SANDBOX -->
+      <section id="sec-options" class="section-block mobile-pane" data-pane="options">
+        <div class="section-header">
+          <h2>二、期权 Gamma 微结构与纳指防线（实时期权链 + 交互沙盘）</h2>
+          <span class="section-subtitle">聚合近期、月末与四巫日 QQQ 期权链未平仓合约</span>
+        </div>
+        <div class="two-col">
+          <div class="panel">
+            <div class="section-header">
+              <h2>纳指100 / QQQ 期权筹码墙（Put/Call OI）与触发线</h2>
+              <span class="section-subtitle" id="options-exp-label">覆盖近期及月度期权链</span>
+            </div>
+            <div class="chart-box" id="chart-options-walls"></div>
+            <div class="chart-legend">
+              <span class="legend-item"><span class="legend-swatch" style="background: var(--signal-danger);"></span>Put OI 看跌防线</span>
+              <span class="legend-item"><span class="legend-swatch" style="background: var(--signal-ok);"></span>Call OI 看涨阻力</span>
+              <span class="legend-item"><span class="legend-swatch" style="background: var(--accent-gold);"></span>当前现价</span>
+              <span class="legend-item"><span class="legend-swatch" style="background: var(--series-cyan);"></span>Zero-Gamma 翻转线</span>
+            </div>
+
+            <!-- Interactive Gamma Sandbox -->
+            <div class="sandbox-panel" id="gamma-sandbox-panel">
+              <div class="sandbox-slider-row">
+                <span style="font-weight:600; font-size:0.88rem;">点位情景沙盘（拖动推演应对策略）</span>
+                <span id="sandbox-readout" class="gold-txt" style="font-family:var(--font-mono); font-weight:600;">--</span>
+              </div>
+              <input id="sandbox-slider" class="sandbox-range" type="range" min="23500" max="29000" step="20" value="26214" />
+              <div id="sandbox-verdict-box" class="sandbox-output"></div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="section-header">
+              <h2>MOVE vs VXN 波动率剪刀差 &amp; 关键防线明细</h2>
+              <span class="section-subtitle">债市定价尾部风险 vs 股市期权定价</span>
+            </div>
+            <div class="table-wrap">
+              <table class="data-table" id="options-summary-table">
+                <thead>
+                  <tr>
+                    <th>微结构锚点 / 波动率指标</th>
+                    <th class="num">当前读数</th>
+                    <th class="num">对应 QQQ / 分位</th>
+                  </tr>
+                </thead>
+                <tbody id="options-summary-tbody"></tbody>
+              </table>
+            </div>
+            <ul class="findings-list" id="micro-findings"></ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- PANE 4: AI CAPEX LEDGER -->
+      <section id="sec-ai" class="section-block mobile-pane" data-pane="ai">
+        <div class="section-header">
+          <h2>三、AI 算力账本审计与「五大周期见顶信号」</h2>
+          <span class="section-subtitle">云五巨头最新季报现金流 + 核心/二线算力债与超级IPO破发监控</span>
+        </div>
+        <div class="two-col-equal">
+          <div class="panel">
+            <div class="section-header">
+              <h2>五大见顶信号实时核验清单</h2>
+              <span class="section-subtitle" id="ai-triggered-badge">-- / 5 触发</span>
+            </div>
+            <div class="signal-checklist" id="ai-signals-list"></div>
+
+            <div class="section-header" style="margin-top: 16px;">
+              <h2>AI 产业链分层股价压力表</h2>
+            </div>
+            <div class="table-wrap">
+              <table class="data-table" id="ai-equities-table">
+                <thead>
+                  <tr>
+                    <th>代码 / 角色</th>
+                    <th class="num">最新价</th>
+                    <th class="num">1日</th>
+                    <th class="num">5日</th>
+                    <th class="num">52周回撤</th>
+                  </tr>
+                </thead>
+                <tbody id="ai-equities-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="section-header">
+              <h2>云五巨头单季：经营现金流 (OCF) vs 资本开支 (CapEx)</h2>
+              <span class="section-subtitle" id="ai-capex-summary-label">--</span>
+            </div>
+            <div class="chart-box" id="chart-ai-capex"></div>
+            <div class="chart-legend">
+              <span class="legend-item"><span class="legend-swatch" style="background: var(--series-cyan);"></span>单季 OCF ($B)</span>
+              <span class="legend-item"><span class="legend-swatch" style="background: var(--signal-danger);"></span>单季 CapEx ($B)</span>
+            </div>
+            <div class="table-wrap" style="margin-top: 12px;">
+              <table class="data-table" id="ai-ledger-table">
+                <thead>
+                  <tr>
+                    <th>云巨头</th>
+                    <th>财季</th>
+                    <th class="num">OCF</th>
+                    <th class="num">CapEx</th>
+                    <th class="num">FCF</th>
+                    <th class="num">CapEx/OCF</th>
+                  </tr>
+                </thead>
+                <tbody id="ai-ledger-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PANE 5: GOLD, SPILLOVER & SMART SCHEDULE / HISTORY -->
+      <section id="sec-gold" class="section-block mobile-pane" data-pane="gold">
+        <div class="section-header">
+          <h2>四、黄金「打折期」探测器与中国/亚太外溢参照</h2>
+          <span class="section-subtitle">区分「实际利率压制」与「康波钱荒补保证金洗盘」</span>
+        </div>
+        <div class="two-col">
+          <div class="panel">
+            <div class="section-header">
+              <h2>COMEX 黄金近60日走势 vs 200日长期均线</h2>
+              <span class="section-subtitle" id="gold-chart-subtitle">--</span>
+            </div>
+            <div class="chart-box" id="chart-gold"></div>
+            <ul class="findings-list" id="gold-findings"></ul>
+          </div>
+
+          <div class="panel">
+            <div class="section-header">
+              <h2>跨市场与外溢观测矩阵</h2>
+              <span class="section-subtitle">黄金 / 美债 / 离岸人民币 / 中韩权益</span>
+            </div>
+            <div class="table-wrap">
+              <table class="data-table" id="spillover-table">
+                <thead>
+                  <tr>
+                    <th>跨市场标的</th>
+                    <th class="num">最新价</th>
+                    <th class="num">5日</th>
+                    <th class="num">20日</th>
+                    <th class="num">高点回撤</th>
+                  </tr>
+                </thead>
+                <tbody id="spillover-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SMART SCHEDULE & PERIODIC HISTORY (Grouped into Pane 5 on mobile tab mode) -->
+      <section id="sec-schedule" class="section-block mobile-pane" data-pane="gold">
+        <div class="section-header">
+          <h2>五、智能调度时间表（周期 + 关键节点 + 主动访问）与历史档案</h2>
+          <span class="section-subtitle" id="schedule-mode-subtitle">--</span>
+        </div>
+        <div class="two-col">
+          <div class="panel">
+            <div class="section-header">
+              <h2>即将到来的关键市场放榜与对冲节点</h2>
+              <span class="section-subtitle">自动转换为你的手机本地时区与美东时间</span>
+            </div>
+            <div class="table-wrap">
+              <table class="data-table" id="checkpoints-table">
+                <thead>
+                  <tr>
+                    <th>关键监控节点</th>
+                    <th class="num">美东时间</th>
+                    <th class="num">你的本地时间</th>
+                  </tr>
+                </thead>
+                <tbody id="checkpoints-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="section-header">
+              <h2>最近巡检历史记录</h2>
+              <span class="section-subtitle">记录每次自动周期、关键节点与手动刷新</span>
+            </div>
+            <div class="table-wrap">
+              <table class="data-table" id="history-table">
+                <thead>
+                  <tr>
+                    <th>批次 / 触发源</th>
+                    <th>时间 (本地)</th>
+                    <th class="num">风险分</th>
+                    <th class="num">黄金分</th>
+                    <th class="num">纳指</th>
+                    <th class="num">黄金</th>
+                  </tr>
+                </thead>
+                <tbody id="history-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- MOBILE BOTTOM NAVIGATION BAR -->
+  <nav class="mobile-tabbar" id="mobile-tabbar" aria-label="手机底部导航">
+    <button type="button" class="mob-tab active" data-target-tab="all" id="mob-tab-all">
+      <span class="mob-tab-ind"></span>
+      <span>全景</span>
+    </button>
+    <button type="button" class="mob-tab" data-target-tab="plumbing" id="mob-tab-plumbing">
+      <span class="mob-tab-ind"></span>
+      <span>水管信用</span>
+    </button>
+    <button type="button" class="mob-tab" data-target-tab="options" id="mob-tab-options">
+      <span class="mob-tab-ind"></span>
+      <span>期权沙盘</span>
+    </button>
+    <button type="button" class="mob-tab" data-target-tab="ai" id="mob-tab-ai">
+      <span class="mob-tab-ind"></span>
+      <span>AI账本</span>
+    </button>
+    <button type="button" class="mob-tab" data-target-tab="gold" id="mob-tab-gold">
+      <span class="mob-tab-ind"></span>
+      <span>黄金调度</span>
+    </button>
+  </nav>
+
+  <!-- SETTINGS & MOBILE INSTALL MODAL -->
+  <div id="settings-modal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+    <div class="modal-card">
+      <h3 id="settings-title">手机随时访问 &amp; 实时后端连接设置</h3>
+      <p style="margin:0; font-size:0.83rem; color:var(--text-secondary); line-height:1.55;">
+        <strong>iPhone / Android 安装到桌面</strong>：在手机浏览器点击「分享 → 添加到主屏幕」，即可获得全屏原生 App 体验。<br />
+        当前运行模式：<strong id="current-mode-badge" class="gold-txt">检测中...</strong>
+      </p>
+
+      <div class="form-field">
+        <label for="input-api-base">可选：自定义 24/7 实时 Python 后端地址（如 Render / 自建 Docker 地址）</label>
+        <input id="input-api-base" class="form-input" type="url" placeholder="例如 https://henren-sentinel.onrender.com (留空则自动探测)" />
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:16px;">
+        <button id="btn-close-settings" class="btn" type="button">关闭</button>
+        <button id="btn-save-settings" class="btn btn-primary" type="button">保存并重连</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-msg" class="toast" role="status" aria-live="polite"></div>
+  <script src="./app.js"></script>
+</body>
+</html>

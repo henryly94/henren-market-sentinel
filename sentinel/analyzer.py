@@ -1,0 +1,490 @@
+"""「一个狠人」(@henren778) Five-Layer Market Regime & Opportunity Engine."""
+
+from __future__ import annotations
+
+from typing import Any
+
+
+def _clamp(val: float, lo: float = 0.0, hi: float = 100.0) -> int:
+    return int(round(max(lo, min(hi, val))))
+
+
+def analyze_market_snapshot(snapshot: dict[str, Any]) -> dict[str, Any]:
+    """Run the 5-pillar Henren analytical framework on real market data."""
+    fred_m = snapshot.get("fred", {}).get("metrics", {})
+    fred_d = snapshot.get("fred", {}).get("derived", {})
+    quotes = snapshot.get("quotes", {})
+    options = snapshot.get("options", {})
+    ai_ledger = snapshot.get("ai_ledger", {})
+    cal = snapshot.get("calendar", {})
+
+    # -------------------------------------------------------------------------
+    # 1. DOLLAR PLUMBING ("美元水管：钱没了还是管道尚稳？")
+    # -------------------------------------------------------------------------
+    sofr_sp = fred_d.get("sofr_iorb_spread", {}).get("value_bps", 0.0)
+    sofr_val = fred_m.get("SOFR", {}).get("value", 0.0)
+    iorb_val = fred_m.get("IORB", {}).get("value", 0.0)
+    rrp_bn = fred_m.get("RRPONTSYD", {}).get("value", 0.0)
+    tga_bn = fred_m.get("WTREGEN", {}).get("value", 0.0)
+    reserves_bn = fred_m.get("WRESBAL", {}).get("value", 3200.0)
+    net_liq = fred_d.get("net_liquidity", {})
+    net_liq_tn = net_liq.get("value_tn", 5.5)
+    net_liq_chg_4w = net_liq.get("chg_4w_bn", 0.0)
+    bdays_me = cal.get("bdays_to_month_end", 10)
+    bdays_ye = cal.get("bdays_to_year_end", 30)
+
+    plumbing_score = 15.0
+    # SOFR - IORB corridor check
+    if sofr_sp > 12:
+        plumbing_score += 40
+    elif sofr_sp > 4:
+        plumbing_score += 26
+    elif sofr_sp > 0:
+        plumbing_score += 15
+
+    # ON RRP buffer depletion
+    if rrp_bn < 20:
+        plumbing_score += 22
+    elif rrp_bn < 150:
+        plumbing_score += 14
+    elif rrp_bn < 400:
+        plumbing_score += 6
+
+    # Bank reserves vs $3.0T LCLoR red line
+    if reserves_bn < 2900:
+        plumbing_score += 22
+    elif reserves_bn < 3050:
+        plumbing_score += 14
+    elif reserves_bn < 3250:
+        plumbing_score += 6
+
+    # TGA cash hoarding (> $800B drains private reserves)
+    if tga_bn > 850:
+        plumbing_score += 10
+    elif tga_bn > 700:
+        plumbing_score += 5
+
+    # Month-end / Year-end settlement proximity
+    if bdays_me <= 5 or bdays_ye <= 8:
+        plumbing_score += 8
+
+    plumbing_score_int = _clamp(plumbing_score)
+    plumbing_exploded = bool(sofr_sp >= 8.0 or reserves_bn < 2800)
+
+    if plumbing_exploded:
+        plumbing_status = "管道爆裂告警（钱荒显性化）"
+        plumbing_level = "danger"
+    elif plumbing_score_int >= 60:
+        plumbing_status = "缓冲垫归零 · 紧绷未炸（盯死月末/年末结算）"
+        plumbing_level = "warning"
+    else:
+        plumbing_status = "回购管道平稳（流动性充裕）"
+        plumbing_level = "ok"
+
+    plumbing_findings = [
+        f"SOFR ({sofr_val:.2f}%) 较 IORB ({iorb_val:.2f}%) 利差为 {sofr_sp:+.1f} bps"
+        + (" —— 已突破走廊上限呈轻微倒挂，回购融资边际吃紧但尚未失控。" if 0 < sofr_sp < 8 else
+           " —— 严重击穿走廊上限，回购市场出现显性钱荒！" if sofr_sp >= 8 else
+           " —— 仍处走廊之内，隔夜回购管道未炸。"),
+        f"隔夜逆回购 ON RRP 仅剩 ${rrp_bn:.2f}B（近乎彻底归零），银行准备金 ${reserves_bn/1000:.2f}T "
+        + ("已跌破 $3.0T 稀缺警戒线，任何边际抽水都会直接冲击准备金。" if reserves_bn < 3000 else "尚在 $3.0T 红线之上。"),
+        f"财政部账户 TGA 高达 ${tga_bn:.0f}B（近4周净流动性变化 {net_liq_chg_4w:+.0f}B，当前净流动性 ${net_liq_tn:.2f}T）："
+        "短期形成巨额抽水，但也意味着未来一旦 TGA 放水将成为黄金与流动性敏感资产的强力燃料。",
+        f"结算日历大考：距月末（{cal.get('month_end_settlement')}）仅剩 {bdays_me} 个交易日，距年末（{cal.get('year_end_settlement')}）{bdays_ye} 个交易日 —— "
+        "一级交易商资产负债表考核窗口是检验管道成色的真正试金石。",
+    ]
+
+    # -------------------------------------------------------------------------
+    # 2. CREDIT TIERING & COST OF MONEY ("不是钱没了，是钱贵了 · 最烂的债先炸")
+    # -------------------------------------------------------------------------
+    ccc_yield = fred_m.get("BAMLH0A3HYCEY", {}).get("value", 12.0)
+    ccc_oas = fred_m.get("BAMLH0A3HYC", {}).get("value", 8.0)
+    hy_oas = fred_m.get("BAMLH0A0HYM2", {}).get("value", 3.5)
+    ig_oas = fred_m.get("BAMLC0A0CM", {}).get("value", 1.0)
+    dgs10 = fred_m.get("DGS10", {}).get("value", 4.2)
+    dgs2 = fred_m.get("DGS2", {}).get("value", 4.0)
+    real_10y = fred_m.get("DFII10", {}).get("value", 2.0)
+    breakeven_10y = fred_m.get("T10YIE", {}).get("value", 2.2)
+
+    ccc_hy_ratio = round(ccc_oas / max(hy_oas, 0.1), 2)
+    ccc_ig_ratio = round(ccc_oas / max(ig_oas, 0.1), 1)
+
+    credit_score = 15.0
+    if ccc_yield >= 17.0:
+        credit_score += 36
+    elif ccc_yield >= 14.5:
+        credit_score += 25
+    elif ccc_yield >= 12.5:
+        credit_score += 12
+
+    if ccc_hy_ratio >= 3.4:
+        credit_score += 20
+    elif ccc_hy_ratio >= 2.8:
+        credit_score += 10
+
+    if real_10y >= 2.5:
+        credit_score += 18
+    elif real_10y >= 2.0:
+        credit_score += 10
+
+    if dgs10 >= 4.7:
+        credit_score += 12
+    elif dgs10 >= 4.3:
+        credit_score += 6
+
+    credit_score_int = _clamp(credit_score)
+
+    if not plumbing_exploded and ccc_yield >= 15.0:
+        money_diagnosis = "不是钱没了，是钱贵了（边缘信用定向爆破）"
+        credit_level = "danger"
+    elif plumbing_exploded and hy_oas >= 4.5:
+        money_diagnosis = "全面信用与流动性双重冻结"
+        credit_level = "danger"
+    elif credit_score_int >= 55:
+        money_diagnosis = "高实际利率压制 · 信用利差走阔初期"
+        credit_level = "warning"
+    else:
+        money_diagnosis = "资金成本温和 · 信用顺畅"
+        credit_level = "ok"
+
+    credit_findings = [
+        f"CCC级及以下垃圾债有效收益率飙至 {ccc_yield:.2f}%（OAS {ccc_oas:.2f}%），而投资级利差仅 {ig_oas:.2f}%、整体高收益利差 {hy_oas:.2f}%。",
+        f"信用撕裂比（CCC / HY OAS）高达 {ccc_hy_ratio:.2f}x（CCC / IG 达 {ccc_ig_ratio:.1f}x）：典型的「底层烂债先炸」，二线高杠杆算力债与垃圾债已处违约重定价区，而表层大盘尚未完全计价。",
+        f"无风险资金依然昂贵：10Y美债 {dgs10:.2f}%、2Y美债 {dgs2:.2f}%，10Y TIPS 实际利率高达 {real_10y:.2f}%（通胀预期 {breakeven_10y:.2f}%）。",
+        "联储反应函数判定：只要回购管道未全面爆裂、IG利差未失控，美联储「只认管道不认股价」，不会因高估值科技股回调而轻易转向降息。",
+    ]
+
+    # -------------------------------------------------------------------------
+    # 3. VOLATILITY SCISSORS & OPTIONS GAMMA ("MOVE vs VXN · 负Gamma放大与24660防线")
+    # -------------------------------------------------------------------------
+    move_q = quotes.get("^MOVE", {})
+    vxn_q = quotes.get("^VXN", {})
+    vix_q = quotes.get("^VIX", {})
+    ndx_q = quotes.get("^NDX", {})
+    nvda_q = quotes.get("NVDA", {})
+
+    move_val = move_q.get("price", 98.0)
+    move_pct = move_q.get("pct_1y", 50.0)
+    vxn_val = vxn_q.get("price") or fred_m.get("VXNCLS", {}).get("value", 25.0)
+    vxn_pct = vxn_q.get("pct_1y") or fred_m.get("VXNCLS", {}).get("pct_1y", 50.0)
+    vix_val = vix_q.get("price", 20.0)
+    vol_scissors = round(move_pct - vxn_pct, 1)
+
+    in_neg_gamma = options.get("in_negative_gamma", False)
+    zero_gamma_ndx = options.get("zero_gamma_ndx", 27000)
+    put_wall = options.get("major_put_wall", {})
+    near_put = options.get("near_put_support", {})
+    call_wall = options.get("major_call_wall", {})
+    psych_check = options.get("psych_25000_check", {})
+    ndx_spot = ndx_q.get("price", 26215.0)
+
+    micro_score = 20.0
+    if in_neg_gamma:
+        micro_score += 32
+    if vxn_val >= 30:
+        micro_score += 20
+    elif vxn_val >= 24:
+        micro_score += 10
+    if vol_scissors >= 35:
+        micro_score += 22  # Complacent equity vol vs stressed bond vol
+    elif abs(vol_scissors) <= 15 and move_pct >= 70 and vxn_pct >= 70:
+        micro_score += 18  # Dual high-vol storm
+    if options.get("put_call_oi_ratio", 1.0) >= 1.25:
+        micro_score += 10
+
+    micro_score_int = _clamp(micro_score)
+
+    # Detect "Bounce vs Reversal" ("反抽 vs 反转")
+    is_dead_cat_bounce = bool(
+        in_neg_gamma
+        and credit_score_int >= 60
+        and (ndx_q.get("ret_5d_pct", 0) > 1.5 or nvda_q.get("ret_5d_pct", 0) > 8.0)
+    )
+
+    if is_dead_cat_bounce:
+        micro_status = "负Gamma区间 · 做市商对冲挤压型「反抽」（非反转）"
+        micro_level = "danger"
+    elif in_neg_gamma:
+        micro_status = "负Gamma双向放大模式 · 紧盯下方Put Wall防线"
+        micro_level = "warning"
+    elif vol_scissors >= 35:
+        micro_status = "债市巨震股市装睡（MOVE-VXN高剪刀差背离）"
+        micro_level = "warning"
+    else:
+        micro_status = "正Gamma波动收敛区间（做市商高抛低吸护盘）"
+        micro_level = "ok"
+
+    pw_ndx = put_wall.get("ndx_equiv", 24650)
+    pw_qqq = put_wall.get("qqq_strike", 600)
+    pw_oi = put_wall.get("open_interest", 0)
+    cw_ndx = call_wall.get("ndx_equiv", 28750)
+    cw_qqq = call_wall.get("qqq_strike", 700)
+    ratio_25k = psych_check.get("wall_to_25000_oi_ratio", 1.0)
+
+    micro_findings = [
+        f"Gamma 状态：纳指100现价 {ndx_spot:,.0f} 位于正负 Gamma 翻转线（~{zero_gamma_ndx:,.0f}）"
+        + ("下方，处于【负 Gamma 区间】—— 做市商被迫追涨杀跌，利好消息易触发空头+做市商对冲脉冲（暴力反抽），下跌时同样加速助跌。"
+           if in_neg_gamma else "上方，处于【正 Gamma 区间】，做市商高抛低吸抑制日内波动。"),
+        f"真实期权防线 vs 整数幻觉：多头最厚实值/虚值看跌期权墙在 QQQ ${pw_qqq:.0f}（对应纳指 ~{pw_ndx:,} 点，未平仓 {pw_oi:,} 张），"
+        f"筹码厚度约为纳指 25,000 整数位附近的 {ratio_25k:.1f} 倍；近端第一支撑在 QQQ ${near_put.get('qqq_strike', 635):.0f}（~{near_put.get('ndx_equiv', 26087):,}），上方最大阻力墙在 QQQ ${cw_qqq:.0f}（~{cw_ndx:,}）。",
+        f"跨资产波动率：美债 MOVE {move_val:.1f}（1年分位 {move_pct:.0f}%） vs 纳指 VXN {vxn_val:.1f}（1年分位 {vxn_pct:.0f}%），VIX {vix_val:.1f}，剪刀差 {vol_scissors:+.0f} 个百分位点。",
+    ]
+
+    # -------------------------------------------------------------------------
+    # 4. AI CAPEX LEDGER & 5 PEAK SIGNALS ("AI算力账本审计与五大见顶信号")
+    # -------------------------------------------------------------------------
+    ai_sum = ai_ledger.get("summary", {})
+    neg_fcf_n = ai_sum.get("negative_fcf_count", 0)
+    total_ai_n = max(ai_sum.get("total_audited", 5), 1)
+    ann_capex_bn = ai_sum.get("annualized_capex_bn", 0.0)
+    q_fcf_bn = ai_sum.get("quarterly_fcf_bn", 0.0)
+    agg_capex_ocf = ai_sum.get("agg_capex_to_ocf_pct", 0.0)
+
+    ant_q = quotes.get("ANT", {})
+    crwv_q = quotes.get("CRWV", {})
+    avgo_q = quotes.get("AVGO", {})
+    vst_q = quotes.get("VST", {})
+
+    ant_broken_ipo = bool(ant_q and ant_q.get("vs_ipo_pct", 0.0) < 0.0)
+    crwv_weak = bool(crwv_q and (crwv_q.get("drawdown_52w_pct", 0.0) < -25.0 or crwv_q.get("ret_1d_pct", 0.0) < -5.0))
+
+    peak_signals = [
+        {
+            "name": "云巨头自由现金流转负",
+            "triggered": bool(neg_fcf_n >= 2 or q_fcf_bn < 0),
+            "detail": f"{neg_fcf_n}/{total_ai_n} 家云巨头单季 FCF 转负，五巨头合计单季 FCF ${q_fcf_bn:+.1f}B",
+        },
+        {
+            "name": "万亿级算力账单吞噬经营现金流",
+            "triggered": bool(agg_capex_ocf >= 85.0 or ann_capex_bn >= 750.0),
+            "detail": f"五巨头年化 CapEx 高达 ${ann_capex_bn:.0f}B，占经营现金流比例达 {agg_capex_ocf:.1f}%",
+        },
+        {
+            "name": "超级IPO山顶抽血与破发检验",
+            "triggered": ant_broken_ipo,
+            "detail": (
+                f"Anthropic (ANT) 现价 ${ant_q.get('price', 0):.2f}，较 $83 发行价 {ant_q.get('vs_ipo_pct', 0):+.2f}%（已破发）"
+                if ant_q else "超级IPO流动性抽血监控中"
+            ),
+        },
+        {
+            "name": "二线算力与高息债脆弱端领跌",
+            "triggered": bool(crwv_weak and ccc_yield >= 15.0),
+            "detail": (
+                f"CoreWeave (CRWV) 现价 ${crwv_q.get('price', 0):.2f}（单日 {crwv_q.get('ret_1d_pct', 0):+.1f}%，距高点 {crwv_q.get('drawdown_52w_pct', 0):.1f}%）叠加 CCC 利率 {ccc_yield:.1f}%"
+                if crwv_q else f"CCC级融资成本 {ccc_yield:.1f}%"
+            ),
+        },
+        {
+            "name": "核心芯片龙头反抽后动能分化",
+            "triggered": bool(nvda_q.get("price", 0) < nvda_q.get("ma50", 0) or nvda_q.get("ret_1d_pct", 0) < -2.0),
+            "detail": (
+                f"NVDA ${nvda_q.get('price', 0):.2f}（单日 {nvda_q.get('ret_1d_pct', 0):+.1f}%，50日线 ${nvda_q.get('ma50', 0):.1f}）；AVGO ${avgo_q.get('price', 0):.2f}"
+            ),
+        },
+    ]
+    triggered_count = sum(1 for s in peak_signals if s["triggered"])
+    ai_score_int = _clamp(triggered_count * 18 + (10 if agg_capex_ocf > 100 else 0))
+
+    if triggered_count >= 4:
+        ai_status = f"周期见顶信号齐亮（{triggered_count}/5 触发 · 反抽宜降杠杆排雷）"
+        ai_level = "danger"
+    elif triggered_count >= 2:
+        ai_status = f"资本开支与现金流背离加剧（{triggered_count}/5 触发 · 精选现金流龙头）"
+        ai_level = "warning"
+    else:
+        ai_status = f"算力投入回报健康（{triggered_count}/5 触发）"
+        ai_level = "ok"
+
+    # -------------------------------------------------------------------------
+    # 5. GOLD DISCOUNT DETECTOR & CHINA SPILLOVER ("黄金打折期与中国外溢")
+    # -------------------------------------------------------------------------
+    gold_q = quotes.get("GC=F", {})
+    copper_q = quotes.get("HG=F", {})
+    cnh_q = quotes.get("USDCNH=X", {})
+    fxi_q = quotes.get("FXI", {})
+    kweb_q = quotes.get("KWEB", {})
+    kospi_q = quotes.get("^KS11", {})
+
+    gold_px = gold_q.get("price", 3550.0)
+    gold_dd = gold_q.get("drawdown_52w_pct", -10.0)
+    gold_ma200 = gold_q.get("ma200", 3100.0)
+    gold_above_200 = gold_q.get("above_ma200", True)
+    gold_rsi = gold_q.get("rsi14", 45.0) or 45.0
+
+    # Henren "康波钱荒洗金 / 打折期" logic:
+    # Fiscal dominance ($40T debt / high TGA) + meaningful pullback (-4% to -42%) + liquidity/margin stress washing out leveraged longs
+    is_gold_discount = bool(
+        gold_dd <= -4.0
+        and gold_dd >= -42.0
+        and (plumbing_score_int >= 50 or credit_score_int >= 60)
+    )
+
+    gold_opp_score = 45.0
+    if is_gold_discount:
+        gold_opp_score += 28
+    if gold_above_200:
+        gold_opp_score += 8
+    if gold_rsi < 30:
+        gold_opp_score += 14
+    elif gold_rsi < 45:
+        gold_opp_score += 8
+    if tga_bn > 800:  # Future TGA release fuel
+        gold_opp_score += 5
+    gold_opp_score_int = _clamp(gold_opp_score)
+
+    if is_gold_discount:
+        gold_status = "康波钱荒洗金 · 黄金处于「打折期」（分批布局窗口）"
+        gold_level = "opportunity"
+    elif gold_dd > -3.0:
+        gold_status = "黄金处于主升浪高位运行（持有为主，忌追高加杠杆）"
+        gold_level = "ok"
+    else:
+        gold_status = "黄金中期盘整消化实际利率压力"
+        gold_level = "warning"
+
+    cnh_px = cnh_q.get("price") or fred_m.get("DEXCHUS", {}).get("value", 6.67)
+    cu_au_ratio = round((copper_q.get("price", 4.2) / max(gold_px, 1.0)) * 1000.0, 3) if copper_q else 0.0
+
+    gold_spillover_findings = [
+        f"COMEX 黄金现价 ${gold_px:,.1f}，距52周高点（${gold_q.get('high_52w', 4000):,.0f}）回撤 {gold_dd:.1f}%，RSI(14)={gold_rsi:.1f}，200日均线 ${gold_ma200:,.0f}。",
+        (
+            "「打折期」机制触发：金价回撤主因是对冲基金在回购紧绷与高波动中被动砍仓换取美元流动性（「砍仓先砍最好卖的」），"
+            "而非40万亿美债财政主导逻辑逆转；一旦月末/年末后 TGA 放水或联储被迫修补回购管道，黄金将先于美股修复。"
+            if is_gold_discount else
+            "金价当前未出现明显流动性错杀折价，维持底仓跟踪实际利率与 TGA 账户动向。"
+        ),
+        f"中国与亚太外溢参照：离岸人民币 USD/CNH 报 {cnh_px:.3f}，FXI 20日涨跌 {fxi_q.get('ret_20d_pct', 0):+.1f}%（KWEB {kweb_q.get('ret_20d_pct', 0):+.1f}%），"
+        f"韩国 KOSPI 距高点 {kospi_q.get('drawdown_52w_pct', 0):.1f}%，铜金比(×1000)={cu_au_ratio:.3f} —— "
+        "需警惕美国 AI 资本开支见顶对中国硬件出口链的外溢拖累，以及国内信用重定价下的「红利央票 vs 题材彩票」极端分化。",
+    ]
+
+    # -------------------------------------------------------------------------
+    # MASTER REGIME SYNTHESIS & ACTIONABLE ALLOCATION PLAYBOOK
+    # -------------------------------------------------------------------------
+    overall_risk = _clamp(
+        0.25 * plumbing_score_int
+        + 0.25 * credit_score_int
+        + 0.25 * micro_score_int
+        + 0.25 * ai_score_int
+    )
+
+    if plumbing_exploded:
+        headline = "红色警报：美元回购管道破损 · 现金与黄金静待联储救场"
+        summary_verdict = (
+            "回购市场利差突破警戒阈值，「钱贵」正在演变为显性「钱荒」。历史规律表明美联储将在管道受损时被迫介入注水，"
+            "但在政策落地前高Beta股仍有流动性踩踏风险；一旦救市启动，黄金确定性显著高于高估值科技股。"
+        )
+    elif is_dead_cat_bounce or (ai_score_int >= 70 and credit_score_int >= 65):
+        headline = "防守反击期：「不是钱没了，是钱贵了」· 美股AI周期顶反抽减杠杆，黄金逢洗盘分批吸纳"
+        summary_verdict = (
+            f"当前核心矛盾并非全面回购崩盘（SOFR-IORB {sofr_sp:+.1f}bps），而是高利率下的边缘信用爆破（CCC级借钱成本 {ccc_yield:.1f}%）"
+            f"叠加 AI 云巨头现金流转负（{neg_fcf_n}/{total_ai_n} 家 FCF 为负）。纳指在 ~{zero_gamma_ndx:,} 下方处于负 Gamma 放大区间，"
+            f"突发利好推升的暴涨定性为做市商被动回补的「反抽」而非周期反转。下方真正期权厚防线在纳指 ~{pw_ndx:,}（QQQ ${pw_qqq:.0f}），"
+            f"同时紧盯 {cal.get('month_end_settlement')} 月末与 {cal.get('year_end_settlement')} 年末资金面大考；黄金回调属于「钱荒洗金打折期」。"
+        )
+    elif overall_risk >= 55:
+        headline = "震荡防御期：流动性缓冲垫变薄 · 严控杠杆与信用下沉风险"
+        summary_verdict = (
+            "美元净流动性与期权微结构进入敏感区，资金成本偏高抑制估值扩张。建议降低二线题材与高负债标的敞口，保留短债现金干火药。"
+        )
+    else:
+        headline = "顺风进攻期：美元水管顺畅 + 正Gamma护航 · 顺势持有核心生产性资产"
+        summary_verdict = (
+            "回购利差平稳、信用利差收敛且指数位于正 Gamma 区间，市场具备稳健上行基础，可顺势配置现金流健康的科技龙头。"
+        )
+
+    allocation_cards = [
+        {
+            "asset": "黄金 (GC=F / GLD)",
+            "stance": "逢低分批吸纳（打折期）" if is_gold_discount else "核心底仓持有",
+            "signal_tag": "首选配置" if is_gold_discount else "中性偏多",
+            "rationale": (
+                f"现价 ${gold_px:,.0f}（高点回撤 {gold_dd:.1f}%）。在 $40T 美债与高 TGA（${tga_bn:.0f}B）背景下，"
+                "因机构补保证金引发的金价回撤属于「1976式钱荒洗盘」。不加杠杆、利用回调分批建仓；若月末/年末管道吃紧倒逼联储修管道，黄金将最先领涨。"
+            ),
+            "trigger": f"右侧确认信号：SOFR回落 + TGA余额开始下行，或金价放量站回50日线（${gold_q.get('ma50', 3700):,.0f}）",
+        },
+        {
+            "asset": "美股宽基与纳指 (QQQ / ^NDX)",
+            "stance": "反抽降杠杆 · 盯防线不追高" if in_neg_gamma else "正Gamma顺势持有",
+            "signal_tag": "谨慎防守" if in_neg_gamma else "顺势偏多",
+            "rationale": (
+                f"现价 {ndx_spot:,.0f} 处于负 Gamma 区（翻转线 ~{zero_gamma_ndx:,}）。联储只认管道不认股价，"
+                f"在 10Y 实际利率 {real_10y:.2f}% 环境下，暴涨宜视为减仓/对冲窗口而非追涨信号。整数位 25,000 保护极薄，真正筹码防线看 ~{pw_ndx:,}（QQQ ${pw_qqq:.0f}）。"
+            ),
+            "trigger": f"转多条件：重新站稳正Gamma线 ~{zero_gamma_ndx:,} 且 CCC 利差拐头收敛；破位警戒：有效跌穿 ~{pw_ndx:,}",
+        },
+        {
+            "asset": "AI 产业链内部结构 (NVDA / AVGO vs ANT / CRWV)",
+            "stance": "去伪存真 · 规避高负债二线算力与高估值次新",
+            "signal_tag": "结构排雷",
+            "rationale": (
+                f"五巨头年化 CapEx ${ann_capex_bn:.0f}B、{neg_fcf_n}家 FCF 转负，叠加 CCC 融资成本 {ccc_yield:.1f}%，"
+                "依赖外部举债/卖方信贷的二线算力（如 CRWV）及抽血型高估值超级IPO（如破发的 ANT）处于风暴眼；即便配置也仅限资产负债表极强且无惧折旧的环节，严禁马丁格尔死扛。"
+            ),
+            "trigger": "观察云巨头下一季 CapEx 指引是否减速、以及二线算力高息债利差是否止血",
+        },
+        {
+            "asset": "美元短债现金 vs 长端美债 (SHV/T-Bills vs TLT)",
+            "stance": f"超配短端高息现金（~{fred_m.get('DGS3MO', {}).get('value', 4.5):.2f}%）· 长债等MOVE回落",
+            "signal_tag": "流动性压舱石",
+            "rationale": (
+                f"3个月美债提供约 {fred_m.get('DGS3MO', {}).get('value', 4.5):.2f}% 无久期风险收益，既能规避 10Y 美债（{dgs10:.2f}%）的财政供给与通胀粘性波动，"
+                "又能在 11/30、12/31 结算大考若砸出黄金坑时充当随时出击的「干火药」。"
+            ),
+            "trigger": "长债(TLT)右侧信号：MOVE指数回落至 85 以下且就业/通胀实质降温",
+        },
+    ]
+
+    return {
+        "overall_risk_score": overall_risk,
+        "headline": headline,
+        "summary_verdict": summary_verdict,
+        "money_diagnosis": money_diagnosis,
+        "is_dead_cat_bounce": is_dead_cat_bounce,
+        "is_gold_discount": is_gold_discount,
+        "pillars": {
+            "plumbing": {
+                "title": "美元水管与结算节点",
+                "score": plumbing_score_int,
+                "status": plumbing_status,
+                "level": plumbing_level,
+                "findings": plumbing_findings,
+            },
+            "credit": {
+                "title": "资金成本与信用分层",
+                "score": credit_score_int,
+                "status": money_diagnosis,
+                "level": credit_level,
+                "findings": credit_findings,
+                "ccc_hy_ratio": ccc_hy_ratio,
+                "ccc_ig_ratio": ccc_ig_ratio,
+            },
+            "microstructure": {
+                "title": "波动率剪刀差与期权Gamma",
+                "score": micro_score_int,
+                "status": micro_status,
+                "level": micro_level,
+                "findings": micro_findings,
+                "vol_scissors": vol_scissors,
+            },
+            "ai_ledger": {
+                "title": "AI算力账本与见顶审计",
+                "score": ai_score_int,
+                "status": ai_status,
+                "level": ai_level,
+                "peak_signals": peak_signals,
+                "triggered_count": triggered_count,
+            },
+            "gold_spillover": {
+                "title": "黄金打折期与中国外溢",
+                "score": gold_opp_score_int,
+                "status": gold_status,
+                "level": gold_level,
+                "findings": gold_spillover_findings,
+                "cu_au_ratio": cu_au_ratio,
+            },
+        },
+        "allocation_cards": allocation_cards,
+    }

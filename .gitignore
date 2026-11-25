@@ -1,0 +1,7 @@
+__pycache__/
+*.py[cod]
+*.sqlite3
+data/history.db
+dist/
+.env
+.venv/
