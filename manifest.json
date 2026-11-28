@@ -1,0 +1,25 @@
+{
+  "name": "狠人框架 · 全球市场风向台",
+  "short_name": "狠人风向台",
+  "description": "美元水管、信用分层、期权Gamma防线、AI算力账本与黄金打折期实时巡检终端",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0f1115",
+  "theme_color": "#0f1115",
+  "icons": [
+    {
+      "src": "./icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
